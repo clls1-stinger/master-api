@@ -19,6 +19,7 @@ public class Note {
     @Column(columnDefinition = "TEXT") // Para mapear a tipo TEXT en PostgreSQL
     private String note;
 
-    @Temporal(TemporalType.DATE)
+    @Column(nullable = false)
+    @Temporal(TemporalType.TIMESTAMP)
     private Date creation;
 }

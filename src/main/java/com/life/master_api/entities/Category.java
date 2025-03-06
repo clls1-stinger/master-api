@@ -20,6 +20,6 @@ public class Category {
     private String description;
 
     @Column(nullable = false) // <-- NOT NULL en la DB
-    @Temporal(TemporalType.DATE) // <-- Para mapear a tipo DATE en la DB
+    @Temporal(TemporalType.TIMESTAMP) // <-- Para mapear a tipo DATE en la DB
     private Date creation;
 }
