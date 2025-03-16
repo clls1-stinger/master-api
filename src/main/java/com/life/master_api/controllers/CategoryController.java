@@ -2,6 +2,9 @@ package com.life.master_api.controllers;
 
 import com.life.master_api.entities.Category;
 import com.life.master_api.repositories.CategoryRepository;
+import com.life.master_api.repositories.HabitRepository;
+import com.life.master_api.repositories.NoteRepository;
+import com.life.master_api.repositories.TaskRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -14,15 +17,22 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @RestController
 @RequestMapping("/categories")
 public class CategoryController {
 
     private final CategoryRepository categoryRepository;
+    private final TaskRepository taskRepository;
+    private final NoteRepository noteRepository;
+    private final HabitRepository habitRepository;
 
-    public CategoryController(CategoryRepository categoryRepository) {
+    public CategoryController(CategoryRepository categoryRepository, TaskRepository taskRepository, NoteRepository noteRepository, HabitRepository habitRepository) {
         this.categoryRepository = categoryRepository;
+        this.taskRepository = taskRepository;
+        this.noteRepository = noteRepository;
+        this.habitRepository = habitRepository;
     }
 
     @Operation(summary = "Obtener todas las categorías")
@@ -62,8 +72,26 @@ public class CategoryController {
     })
     // POST /categories
     @PostMapping
-    public ResponseEntity<Category> createCategory(@Valid @RequestBody Category category) {
+    public ResponseEntity<Category> createCategory(@Valid @RequestBody Category category,
+                                                   @RequestParam(value = "taskIds", required = false) List<Long> taskIds,
+                                                   @RequestParam(value = "noteIds", required = false) List<Long> noteIds,
+                                                   @RequestParam(value = "habitIds", required = false) List<Long> habitIds) {
         category.setCreation(new Date());
+
+        if (taskIds != null && !taskIds.isEmpty()) {
+            Set<Task> tasks = taskRepository.findAllById(taskIds).toSet();
+            category.setTasks(tasks);
+        }
+        if (noteIds != null && !noteIds.isEmpty()) {
+            Set<Note> notes = noteRepository.findAllById(noteIds).toSet();
+            category.setNotes(notes);
+        }
+        if (habitIds != null && !habitIds.isEmpty()) {
+            Set<Habit> habits = habitRepository.findAllById(habitIds).toSet();
+            category.setHabits(habits);
+        }
+
+
         Category savedCategory = categoryRepository.save(category);
         return new ResponseEntity<>(savedCategory, HttpStatus.CREATED);
     }
@@ -76,11 +104,35 @@ public class CategoryController {
     })
     // PUT /categories/{id}
     @PutMapping("/{id}")
-    public ResponseEntity<Category> updateCategory(@Parameter(description = "ID de la categoría a actualizar") @PathVariable Long id, @Valid @RequestBody Category categoryDetails) {
+    public ResponseEntity<Category> updateCategory(@Parameter(description = "ID de la categoría a actualizar") @PathVariable Long id, @Valid @RequestBody Category categoryDetails,
+                                                   @RequestParam(value = "taskIds", required = false) List<Long> taskIds,
+                                                   @RequestParam(value = "noteIds", required = false) List<Long> noteIds,
+                                                   @RequestParam(value = "habitIds", required = false) List<Long> habitIds) {
         return categoryRepository.findById(id)
                 .map(existingCategory -> {
                     existingCategory.setName(categoryDetails.getName());
                     existingCategory.setDescription(categoryDetails.getDescription());
+
+                    if (taskIds != null && !taskIds.isEmpty()) {
+                        Set<Task> tasks = taskRepository.findAllById(taskIds).toSet();
+                        existingCategory.setTasks(tasks);
+                    } else {
+                        existingCategory.getTasks().clear();
+                    }
+                    if (noteIds != null && !noteIds.isEmpty()) {
+                        Set<Note> notes = noteRepository.findAllById(noteIds).toSet();
+                        existingCategory.setNotes(notes);
+                    } else {
+                        existingCategory.getNotes().clear();
+                    }
+                    if (habitIds != null && !habitIds.isEmpty()) {
+                        Set<Habit> habits = habitRepository.findAllById(habitIds).toSet();
+                        existingCategory.setHabits(habits);
+                    } else {
+                        existingCategory.getHabits().clear();
+                    }
+
+
                     Category updatedCategory = categoryRepository.save(existingCategory);
                     return ResponseEntity.ok(updatedCategory);
                 })
@@ -94,7 +146,10 @@ public class CategoryController {
     })
     // PATCH /categories/{id}
     @PatchMapping("/{id}")
-    public ResponseEntity<Category> patchCategory(@Parameter(description = "ID de la categoría a actualizar") @PathVariable Long id, @RequestBody Category categoryDetails) {
+    public ResponseEntity<Category> patchCategory(@Parameter(description = "ID de la categoría a actualizar") @PathVariable Long id, @RequestBody Category categoryDetails,
+                                                  @RequestParam(value = "taskIds", required = false) List<Long> taskIds,
+                                                  @RequestParam(value = "noteIds", required = false) List<Long> noteIds,
+                                                  @RequestParam(value = "habitIds", required = false) List<Long> habitIds) {
         return categoryRepository.findById(id)
                 .map(existingCategory -> {
                     if (categoryDetails.getName() != null) {
@@ -103,6 +158,21 @@ public class CategoryController {
                     if (categoryDetails.getDescription() != null) {
                         existingCategory.setDescription(categoryDetails.getDescription());
                     }
+
+                    if (taskIds != null && !taskIds.isEmpty()) {
+                        Set<Task> tasks = taskRepository.findAllById(taskIds).toSet();
+                        existingCategory.setTasks(tasks);
+                    }
+                    if (noteIds != null && !noteIds.isEmpty()) {
+                        Set<Note> notes = noteRepository.findAllById(noteIds).toSet();
+                        existingCategory.setNotes(notes);
+                    }
+                    if (habitIds != null && !habitIds.isEmpty()) {
+                        Set<Habit> habits = habitRepository.findAllById(habitIds).toSet();
+                        existingCategory.setHabits(habits);
+                    }
+
+
                     Category patchedCategory = categoryRepository.save(existingCategory);
                     return ResponseEntity.ok(patchedCategory);
                 })

@@ -1,7 +1,13 @@
 package com.life.master_api.controllers;
 
+import com.life.master_api.entities.Category;
 import com.life.master_api.entities.Habit;
+import com.life.master_api.entities.Note;
+import com.life.master_api.entities.Task;
+import com.life.master_api.repositories.CategoryRepository;
 import com.life.master_api.repositories.HabitRepository;
+import com.life.master_api.repositories.NoteRepository;
+import com.life.master_api.repositories.TaskRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -14,15 +20,22 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @RestController
 @RequestMapping("/habits")
 public class HabitController {
 
     private final HabitRepository habitRepository;
+    private final CategoryRepository categoryRepository;
+    private final NoteRepository noteRepository;
+    private final TaskRepository taskRepository;
 
-    public HabitController(HabitRepository habitRepository) {
+    public HabitController(HabitRepository habitRepository, CategoryRepository categoryRepository, NoteRepository noteRepository, TaskRepository taskRepository) {
         this.habitRepository = habitRepository;
+        this.categoryRepository = categoryRepository;
+        this.noteRepository = noteRepository;
+        this.taskRepository = taskRepository;
     }
 
     @Operation(summary = "Obtener todos los hábitos")
@@ -40,8 +53,25 @@ public class HabitController {
     })
     // POST /habits
     @PostMapping
-    public ResponseEntity<Habit> createHabit(@Valid @RequestBody Habit habit) {
+    public ResponseEntity<Habit> createHabit(@Valid @RequestBody Habit habit,
+                                             @RequestParam(value = "categoryIds", required = false) List<Long> categoryIds,
+                                             @RequestParam(value = "noteIds", required = false) List<Long> noteIds,
+                                             @RequestParam(value = "taskIds", required = false) List<Long> taskIds) {
         habit.setCreation(new Date());
+
+        if (categoryIds != null && !categoryIds.isEmpty()) {
+            Set<Category> categories = categoryRepository.findAllById(categoryIds).toSet();
+            habit.setCategories(categories);
+        }
+        if (noteIds != null && !noteIds.isEmpty()) {
+            Set<Note> notes = noteRepository.findAllById(noteIds).toSet();
+            habit.setNotes(notes);
+        }
+        if (taskIds != null && !taskIds.isEmpty()) {
+            Set<Task> tasks = taskRepository.findAllById(taskIds).toSet();
+            habit.setTasks(tasks);
+        }
+
         Habit savedHabit = habitRepository.save(habit);
         return new ResponseEntity<>(savedHabit, HttpStatus.CREATED);
     }
@@ -67,10 +97,33 @@ public class HabitController {
     })
     // PUT /habits/{id}
     @PutMapping("/{id}")
-    public ResponseEntity<Habit> updateHabit(@Parameter(description = "ID del hábito a actualizar") @PathVariable Long id, @Valid @RequestBody Habit habitDetails) {
+    public ResponseEntity<Habit> updateHabit(@Parameter(description = "ID del hábito a actualizar") @PathVariable Long id, @Valid @RequestBody Habit habitDetails,
+                                             @RequestParam(value = "categoryIds", required = false) List<Long> categoryIds,
+                                             @RequestParam(value = "noteIds", required = false) List<Long> noteIds,
+                                             @RequestParam(value = "taskIds", required = false) List<Long> taskIds) {
         return habitRepository.findById(id)
                 .map(existingHabit -> {
                     existingHabit.setName(habitDetails.getName());
+
+                    if (categoryIds != null && !categoryIds.isEmpty()) {
+                        Set<Category> categories = categoryRepository.findAllById(categoryIds).toSet();
+                        existingHabit.setCategories(categories);
+                    } else {
+                        existingHabit.getCategories().clear();
+                    }
+                    if (noteIds != null && !noteIds.isEmpty()) {
+                        Set<Note> notes = noteRepository.findAllById(noteIds).toSet();
+                        existingHabit.setNotes(notes);
+                    } else {
+                        existingHabit.getNotes().clear();
+                    }
+                    if (taskIds != null && !taskIds.isEmpty()) {
+                        Set<Task> tasks = taskRepository.findAllById(taskIds).toSet();
+                        existingHabit.setTasks(tasks);
+                    } else {
+                        existingHabit.getTasks().clear();
+                    }
+
                     Habit updatedHabit = habitRepository.save(existingHabit);
                     return ResponseEntity.ok(updatedHabit);
                 })
@@ -84,12 +137,29 @@ public class HabitController {
     })
     // PATCH /habits/{id}
     @PatchMapping("/{id}")
-    public ResponseEntity<Habit> partialUpdateHabit(@Parameter(description = "ID del hábito a actualizar") @PathVariable Long id, @RequestBody Habit habitDetails) {
+    public ResponseEntity<Habit> partialUpdateHabit(@Parameter(description = "ID del hábito a actualizar") @PathVariable Long id, @RequestBody Habit habitDetails,
+                                                    @RequestParam(value = "categoryIds", required = false) List<Long> categoryIds,
+                                                    @RequestParam(value = "noteIds", required = false) List<Long> noteIds,
+                                                    @RequestParam(value = "taskIds", required = false) List<Long> taskIds) {
         return habitRepository.findById(id)
                 .map(existingHabit -> {
                     if (habitDetails.getName() != null) {
                         existingHabit.setName(habitDetails.getName());
                     }
+
+                    if (categoryIds != null && !categoryIds.isEmpty()) {
+                        Set<Category> categories = categoryRepository.findAllById(categoryIds).toSet();
+                        existingHabit.setCategories(categories);
+                    }
+                    if (noteIds != null && !noteIds.isEmpty()) {
+                        Set<Note> notes = noteRepository.findAllById(noteIds).toSet();
+                        existingHabit.setNotes(notes);
+                    }
+                    if (taskIds != null && !taskIds.isEmpty()) {
+                        Set<Task> tasks = taskRepository.findAllById(taskIds).toSet();
+                        existingHabit.setTasks(tasks);
+                    }
+
                     Habit updatedHabit = habitRepository.save(existingHabit);
                     return ResponseEntity.ok(updatedHabit);
                 })
