@@ -3,17 +3,22 @@ package com.life.master_api.entities;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.EqualsAndHashCode; // Import
+
 import java.util.Date;
 import java.util.Set;
+import java.util.HashSet;
 
 @Entity
 @Table(name = "Notes")
 @Data
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)  // Only explicitly included
 public class Note {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Schema(accessMode = Schema.AccessMode.READ_ONLY)
+    @EqualsAndHashCode.Include // Include ID
     private Long id;
 
     @Column(nullable = false)
@@ -32,7 +37,7 @@ public class Note {
             joinColumns = @JoinColumn(name = "NoteId"),
             inverseJoinColumns = @JoinColumn(name = "CategoryId")
     )
-    private Set<Category> categories;
+    private Set<Category> categories = new HashSet<>();
 
     @ManyToMany
     @JoinTable(
@@ -40,7 +45,8 @@ public class Note {
             joinColumns = @JoinColumn(name = "NoteId"),
             inverseJoinColumns = @JoinColumn(name = "HabitId")
     )
-    private Set<Habit> habits;
+    private Set<Habit> habits = new HashSet<>();
+
 
     @ManyToMany
     @JoinTable(
@@ -48,5 +54,5 @@ public class Note {
             joinColumns = @JoinColumn(name = "NoteId"),
             inverseJoinColumns = @JoinColumn(name = "TaskId")
     )
-    private Set<Task> tasks;
+    private Set<Task> tasks = new HashSet<>();
 }
