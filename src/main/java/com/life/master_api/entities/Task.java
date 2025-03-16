@@ -1,22 +1,24 @@
 package com.life.master_api.entities;
 
+import io.swagger.v3.oas.annotations.media.Schema; // <-- Importa Schema
 import jakarta.persistence.*;
 import lombok.Data;
 import java.util.Date;
 
 @Entity
-@Table(name = "Task") // ¡OJO!  Tabla se llama "Task" en tu esquema, no "Tasks"
+@Table(name = "Task")
 @Data
 public class Task {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Schema(accessMode = Schema.AccessMode.READ_ONLY) // <-- Añade @Schema aquí
     private Long id;
 
     @Column(nullable = false)
     private String title;
 
-    @Column(columnDefinition = "TEXT") // Ahora es TEXTO (String)
+    @Column(columnDefinition = "TEXT")
     private String description;
 
     @Column(nullable = false)
