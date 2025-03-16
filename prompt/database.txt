@@ -1,0 +1,82 @@
+CREATE SCHEMA IF NOT EXISTS public;
+
+
+CREATE TABLE public.TaskCategories (
+  TaskId bigint NOT NULL,
+  CategoryId bigint NOT NULL
+);
+
+
+CREATE TABLE public.Habits (
+  id bigint PRIMARY KEY,
+  Name text NOT NULL,
+  Creation date NOT NULL
+);
+
+
+CREATE TABLE public.Notes (
+  id bigint PRIMARY KEY,
+  Title text NOT NULL,
+  Note text,
+  Creation date
+);
+
+
+CREATE TABLE public.HabitCategories (
+  HabitId bigint NOT NULL,
+  CategoryId bigint NOT NULL
+);
+
+
+CREATE TABLE public.NoteTasks (
+  NoteId bigint NOT NULL,
+  TaskId bigint NOT NULL
+);
+
+
+CREATE TABLE public.HabitNotes (
+  HabitId bigint NOT NULL,
+  NoteId bigint NOT NULL
+);
+
+
+CREATE TABLE public.Task (
+  id bigint PRIMARY KEY,
+  Title text NOT NULL,
+  Description bigint,
+  Creation date NOT NULL
+);
+
+
+CREATE TABLE public.Categories (
+  id bigint PRIMARY KEY,
+  name text NOT NULL,
+  Description text NOT NULL,
+  Creation date NOT NULL
+);
+
+
+CREATE TABLE public.NoteCategories (
+  NoteId bigint NOT NULL,
+  CategoryId bigint NOT NULL
+);
+
+
+CREATE TABLE public.HabitTasks (
+  HabitId bigint NOT NULL,
+  TaskId bigint NOT NULL
+);
+
+
+ALTER TABLE public.HabitCategories ADD CONSTRAINT HabitCategories_CategoryId_Categories_id FOREIGN KEY (CategoryId) REFERENCES public.Categories (id);
+ALTER TABLE public.HabitCategories ADD CONSTRAINT HabitCategories_HabitId_Habits_id FOREIGN KEY (HabitId) REFERENCES public.Habits (id);
+ALTER TABLE public.HabitNotes ADD CONSTRAINT HabitNotes_HabitId_Habits_id FOREIGN KEY (HabitId) REFERENCES public.Habits (id);
+ALTER TABLE public.HabitNotes ADD CONSTRAINT HabitNotes_NoteId_Notes_id FOREIGN KEY (NoteId) REFERENCES public.Notes (id);
+ALTER TABLE public.HabitTasks ADD CONSTRAINT HabitTasks_HabitId_Habits_id FOREIGN KEY (HabitId) REFERENCES public.Habits (id);
+ALTER TABLE public.HabitTasks ADD CONSTRAINT HabitTasks_TaskId_Task_id FOREIGN KEY (TaskId) REFERENCES public.Task (id);
+ALTER TABLE public.NoteCategories ADD CONSTRAINT NoteCategories_CategoryId_Categories_id FOREIGN KEY (CategoryId) REFERENCES public.Categories (id);
+ALTER TABLE public.NoteCategories ADD CONSTRAINT NoteCategories_NoteId_Notes_id FOREIGN KEY (NoteId) REFERENCES public.Notes (id);
+ALTER TABLE public.NoteTasks ADD CONSTRAINT NoteTasks_NoteId_Notes_id FOREIGN KEY (NoteId) REFERENCES public.Notes (id);
+ALTER TABLE public.NoteTasks ADD CONSTRAINT NoteTasks_TaskId_Task_id FOREIGN KEY (TaskId) REFERENCES public.Task (id);
+ALTER TABLE public.TaskCategories ADD CONSTRAINT TaskCategories_CategoryId_Categories_id FOREIGN KEY (CategoryId) REFERENCES public.Categories (id);
+ALTER TABLE public.TaskCategories ADD CONSTRAINT TaskCategories_TaskId_Task_id FOREIGN KEY (TaskId) REFERENCES public.Task (id);

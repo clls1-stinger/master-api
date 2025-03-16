@@ -1,0 +1,91 @@
+package com.life.master_api.controllers;
+
+import com.life.master_api.entities.Category;
+import com.life.master_api.repositories.CategoryRepository;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.Date;
+import java.util.List;
+import java.util.Optional;
+
+@RestController
+@RequestMapping("/categories")
+public class CategoryController {
+
+    private final CategoryRepository categoryRepository;
+
+    public CategoryController(CategoryRepository categoryRepository) {
+        this.categoryRepository = categoryRepository;
+    }
+
+    // GET /categories
+    @GetMapping
+    public List<Category> getAllCategories() {
+        return categoryRepository.findAll();
+    }
+
+    // POST /categories
+    @PostMapping
+    public ResponseEntity<Category> createCategory(@RequestBody Category category) {
+        category.setCreation(new Date());
+        Category savedCategory = categoryRepository.save(category);
+        return new ResponseEntity<>(savedCategory, HttpStatus.CREATED);
+    }
+
+    // GET /categories/{id}
+    @GetMapping("/{id}")
+    public ResponseEntity<Category> getCategoryById(@PathVariable Long id) {
+        Optional<Category> category = categoryRepository.findById(id);
+        return category.map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    // PUT /categories/{id}
+    @PutMapping("/{id}")
+    public ResponseEntity<Category> updateCategory(@PathVariable Long id, @RequestBody Category categoryDetails) {
+        return categoryRepository.findById(id)
+                .map(existingCategory -> {
+                    existingCategory.setName(categoryDetails.getName());
+                    existingCategory.setDescription(categoryDetails.getDescription());
+                    Category updatedCategory = categoryRepository.save(existingCategory);
+                    return ResponseEntity.ok(updatedCategory);
+                })
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    // PATCH /categories/{id}
+    @PatchMapping("/{id}")
+    public ResponseEntity<Category> partialUpdateCategory(@PathVariable Long id, @RequestBody Category categoryDetails) {
+        return categoryRepository.findById(id)
+                .map(existingCategory -> {
+                    if (categoryDetails.getName() != null) {
+                        existingCategory.setName(categoryDetails.getName());
+                    }
+                    if (categoryDetails.getDescription() != null) {
+                        existingCategory.setDescription(categoryDetails.getDescription());
+                    }
+                    Category updatedCategory = categoryRepository.save(existingCategory);
+                    return ResponseEntity.ok(updatedCategory);
+                })
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    // DELETE /categories/{id}
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteCategory(@PathVariable Long id) {
+        return categoryRepository.findById(id)
+                .map(category -> {
+                    categoryRepository.delete(category);
+                    return new ResponseEntity<Void>(HttpStatus.NO_CONTENT);
+                })
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    // Additional search endpoint
+    @GetMapping("/search/by-name")
+    public List<Category> getCategoriesByName(@RequestParam String name) {
+        return categoryRepository.findByNameContains(name);
+    }
+}

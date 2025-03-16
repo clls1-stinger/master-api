@@ -1,0 +1,85 @@
+package com.life.master_api.controllers;
+
+import com.life.master_api.entities.Note;
+import com.life.master_api.repositories.NoteRepository;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.Date;
+import java.util.List;
+import java.util.Optional;
+
+@RestController
+@RequestMapping("/notes")
+public class NoteController {
+
+    private final NoteRepository noteRepository;
+
+    public NoteController(NoteRepository noteRepository) {
+        this.noteRepository = noteRepository;
+    }
+
+    // GET /notes
+    @GetMapping
+    public List<Note> getAllNotes() {
+        return noteRepository.findAll();
+    }
+
+    // POST /notes
+    @PostMapping
+    public ResponseEntity<Note> createNote(@RequestBody Note note) {
+        note.setCreation(new Date());
+        Note savedNote = noteRepository.save(note);
+        return new ResponseEntity<>(savedNote, HttpStatus.CREATED);
+    }
+
+    // GET /notes/{id}
+    @GetMapping("/{id}")
+    public ResponseEntity<Note> getNoteById(@PathVariable Long id) {
+        Optional<Note> note = noteRepository.findById(id);
+        return note.map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    // PUT /notes/{id}
+    @PutMapping("/{id}")
+    public ResponseEntity<Note> updateNote(@PathVariable Long id, @RequestBody Note noteDetails) {
+        return noteRepository.findById(id)
+                .map(existingNote -> {
+                    existingNote.setTitle(noteDetails.getTitle());
+                    existingNote.setNote(noteDetails.getNote());
+                    Note updatedNote = noteRepository.save(existingNote);
+                    return ResponseEntity.ok(updatedNote);
+                })
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    // PATCH /notes/{id}
+    @PatchMapping("/{id}")
+    public ResponseEntity<Note> partialUpdateNote(@PathVariable Long id, @RequestBody Note noteDetails) {
+        return noteRepository.findById(id)
+                .map(existingNote -> {
+                    if (noteDetails.getTitle() != null) {
+                        existingNote.setTitle(noteDetails.getTitle());
+                    }
+                    if (noteDetails.getNote() != null) {
+                        existingNote.setNote(noteDetails.getNote());
+                    }
+                    Note updatedNote = noteRepository.save(existingNote);
+                    return ResponseEntity.ok(updatedNote);
+                })
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    // DELETE /notes/{id}
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteNote(@PathVariable Long id) {
+        return noteRepository.findById(id)
+                .map(note -> {
+                    noteRepository.delete(note);
+                    return new ResponseEntity<Void>(HttpStatus.NO_CONTENT);
+                })
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+}
