@@ -1,13 +1,13 @@
 package com.life.master_api.controllers;
 
 import com.life.master_api.entities.Category;
+import com.life.master_api.entities.Habit;
 import com.life.master_api.entities.Note;
 import com.life.master_api.entities.Task;
-import com.life.master_api.entities.Habit;
 import com.life.master_api.repositories.CategoryRepository;
+import com.life.master_api.repositories.HabitRepository;
 import com.life.master_api.repositories.NoteRepository;
 import com.life.master_api.repositories.TaskRepository;
-import com.life.master_api.repositories.HabitRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -21,6 +21,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/notes")
@@ -60,15 +61,15 @@ public class NoteController {
         note.setCreation(new Date());
 
         if (categoryIds != null && !categoryIds.isEmpty()) {
-            Set<Category> categories = categoryRepository.findAllById(categoryIds).toSet();
+            Set<Category> categories = categoryRepository.findAllById(categoryIds).stream().collect(Collectors.toSet());
             note.setCategories(categories);
         }
         if (taskIds != null && !taskIds.isEmpty()) {
-            Set<Task> tasks = taskRepository.findAllById(taskIds).toSet();
+            Set<Task> tasks = taskRepository.findAllById(taskIds).stream().collect(Collectors.toSet());
             note.setTasks(tasks);
         }
         if (habitIds != null && !habitIds.isEmpty()) {
-            Set<Habit> habits = habitRepository.findAllById(habitIds).toSet();
+            Set<Habit> habits = habitRepository.findAllById(habitIds).stream().collect(Collectors.toSet());
             note.setHabits(habits);
         }
 
@@ -107,19 +108,19 @@ public class NoteController {
                     existingNote.setNote(noteDetails.getNote());
 
                     if (categoryIds != null && !categoryIds.isEmpty()) {
-                        Set<Category> categories = categoryRepository.findAllById(categoryIds).toSet();
+                        Set<Category> categories = categoryRepository.findAllById(categoryIds).stream().collect(Collectors.toSet());
                         existingNote.setCategories(categories);
                     } else {
                         existingNote.getCategories().clear();
                     }
                     if (taskIds != null && !taskIds.isEmpty()) {
-                        Set<Task> tasks = taskRepository.findAllById(taskIds).toSet();
+                        Set<Task> tasks = taskRepository.findAllById(taskIds).stream().collect(Collectors.toSet());
                         existingNote.setTasks(tasks);
                     } else {
                         existingNote.getTasks().clear();
                     }
                     if (habitIds != null && !habitIds.isEmpty()) {
-                        Set<Habit> habits = habitRepository.findAllById(habitIds).toSet();
+                        Set<Habit> habits = habitRepository.findAllById(habitIds).stream().collect(Collectors.toSet());
                         existingNote.setHabits(habits);
                     } else {
                         existingNote.getHabits().clear();
@@ -152,15 +153,15 @@ public class NoteController {
                     }
 
                     if (categoryIds != null && !categoryIds.isEmpty()) {
-                        Set<Category> categories = categoryRepository.findAllById(categoryIds).toSet();
+                        Set<Category> categories = categoryRepository.findAllById(categoryIds).stream().collect(Collectors.toSet());
                         existingNote.setCategories(categories);
                     }
                     if (taskIds != null && !taskIds.isEmpty()) {
-                        Set<Task> tasks = taskRepository.findAllById(taskIds).toSet();
+                        Set<Task> tasks = taskRepository.findAllById(taskIds).stream().collect(Collectors.toSet());
                         existingNote.setTasks(tasks);
                     }
                     if (habitIds != null && !habitIds.isEmpty()) {
-                        Set<Habit> habits = habitRepository.findAllById(habitIds).toSet();
+                        Set<Habit> habits = habitRepository.findAllById(habitIds).stream().collect(Collectors.toSet());
                         existingNote.setHabits(habits);
                     }
 

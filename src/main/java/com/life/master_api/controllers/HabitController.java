@@ -21,6 +21,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/habits")
@@ -60,15 +61,15 @@ public class HabitController {
         habit.setCreation(new Date());
 
         if (categoryIds != null && !categoryIds.isEmpty()) {
-            Set<Category> categories = categoryRepository.findAllById(categoryIds).toSet();
+            Set<Category> categories = categoryRepository.findAllById(categoryIds).stream().collect(Collectors.toSet());
             habit.setCategories(categories);
         }
         if (noteIds != null && !noteIds.isEmpty()) {
-            Set<Note> notes = noteRepository.findAllById(noteIds).toSet();
+            Set<Note> notes = noteRepository.findAllById(noteIds).stream().collect(Collectors.toSet());
             habit.setNotes(notes);
         }
         if (taskIds != null && !taskIds.isEmpty()) {
-            Set<Task> tasks = taskRepository.findAllById(taskIds).toSet();
+            Set<Task> tasks = taskRepository.findAllById(taskIds).stream().collect(Collectors.toSet());
             habit.setTasks(tasks);
         }
 
@@ -106,19 +107,19 @@ public class HabitController {
                     existingHabit.setName(habitDetails.getName());
 
                     if (categoryIds != null && !categoryIds.isEmpty()) {
-                        Set<Category> categories = categoryRepository.findAllById(categoryIds).toSet();
+                        Set<Category> categories = categoryRepository.findAllById(categoryIds).stream().collect(Collectors.toSet());
                         existingHabit.setCategories(categories);
                     } else {
                         existingHabit.getCategories().clear();
                     }
                     if (noteIds != null && !noteIds.isEmpty()) {
-                        Set<Note> notes = noteRepository.findAllById(noteIds).toSet();
+                        Set<Note> notes = noteRepository.findAllById(noteIds).stream().collect(Collectors.toSet());
                         existingHabit.setNotes(notes);
                     } else {
                         existingHabit.getNotes().clear();
                     }
                     if (taskIds != null && !taskIds.isEmpty()) {
-                        Set<Task> tasks = taskRepository.findAllById(taskIds).toSet();
+                        Set<Task> tasks = taskRepository.findAllById(taskIds).stream().collect(Collectors.toSet());
                         existingHabit.setTasks(tasks);
                     } else {
                         existingHabit.getTasks().clear();
@@ -148,15 +149,15 @@ public class HabitController {
                     }
 
                     if (categoryIds != null && !categoryIds.isEmpty()) {
-                        Set<Category> categories = categoryRepository.findAllById(categoryIds).toSet();
+                        Set<Category> categories = categoryRepository.findAllById(categoryIds).stream().collect(Collectors.toSet());
                         existingHabit.setCategories(categories);
                     }
                     if (noteIds != null && !noteIds.isEmpty()) {
-                        Set<Note> notes = noteRepository.findAllById(noteIds).toSet();
+                        Set<Note> notes = noteRepository.findAllById(noteIds).stream().collect(Collectors.toSet());
                         existingHabit.setNotes(notes);
                     }
                     if (taskIds != null && !taskIds.isEmpty()) {
-                        Set<Task> tasks = taskRepository.findAllById(taskIds).toSet();
+                        Set<Task> tasks = taskRepository.findAllById(taskIds).stream().collect(Collectors.toSet());
                         existingHabit.setTasks(tasks);
                     }
 

@@ -1,6 +1,9 @@
 package com.life.master_api.controllers;
 
 import com.life.master_api.entities.Category;
+import com.life.master_api.entities.Habit;
+import com.life.master_api.entities.Note;
+import com.life.master_api.entities.Task;
 import com.life.master_api.repositories.CategoryRepository;
 import com.life.master_api.repositories.HabitRepository;
 import com.life.master_api.repositories.NoteRepository;
@@ -18,6 +21,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/categories")
@@ -79,18 +83,17 @@ public class CategoryController {
         category.setCreation(new Date());
 
         if (taskIds != null && !taskIds.isEmpty()) {
-            Set<Task> tasks = taskRepository.findAllById(taskIds).toSet();
+            Set<Task> tasks = taskRepository.findAllById(taskIds).stream().collect(Collectors.toSet());
             category.setTasks(tasks);
         }
         if (noteIds != null && !noteIds.isEmpty()) {
-            Set<Note> notes = noteRepository.findAllById(noteIds).toSet();
+            Set<Note> notes = noteRepository.findAllById(noteIds).stream().collect(Collectors.toSet());
             category.setNotes(notes);
         }
         if (habitIds != null && !habitIds.isEmpty()) {
-            Set<Habit> habits = habitRepository.findAllById(habitIds).toSet();
+            Set<Habit> habits = habitRepository.findAllById(habitIds).stream().collect(Collectors.toSet());
             category.setHabits(habits);
         }
-
 
         Category savedCategory = categoryRepository.save(category);
         return new ResponseEntity<>(savedCategory, HttpStatus.CREATED);
@@ -114,24 +117,23 @@ public class CategoryController {
                     existingCategory.setDescription(categoryDetails.getDescription());
 
                     if (taskIds != null && !taskIds.isEmpty()) {
-                        Set<Task> tasks = taskRepository.findAllById(taskIds).toSet();
+                        Set<Task> tasks = taskRepository.findAllById(taskIds).stream().collect(Collectors.toSet());
                         existingCategory.setTasks(tasks);
                     } else {
                         existingCategory.getTasks().clear();
                     }
                     if (noteIds != null && !noteIds.isEmpty()) {
-                        Set<Note> notes = noteRepository.findAllById(noteIds).toSet();
+                        Set<Note> notes = noteRepository.findAllById(noteIds).stream().collect(Collectors.toSet());
                         existingCategory.setNotes(notes);
                     } else {
                         existingCategory.getNotes().clear();
                     }
                     if (habitIds != null && !habitIds.isEmpty()) {
-                        Set<Habit> habits = habitRepository.findAllById(habitIds).toSet();
+                        Set<Habit> habits = habitRepository.findAllById(habitIds).stream().collect(Collectors.toSet());
                         existingCategory.setHabits(habits);
                     } else {
                         existingCategory.getHabits().clear();
                     }
-
 
                     Category updatedCategory = categoryRepository.save(existingCategory);
                     return ResponseEntity.ok(updatedCategory);
@@ -160,25 +162,23 @@ public class CategoryController {
                     }
 
                     if (taskIds != null && !taskIds.isEmpty()) {
-                        Set<Task> tasks = taskRepository.findAllById(taskIds).toSet();
+                        Set<Task> tasks = taskRepository.findAllById(taskIds).stream().collect(Collectors.toSet());
                         existingCategory.setTasks(tasks);
                     }
                     if (noteIds != null && !noteIds.isEmpty()) {
-                        Set<Note> notes = noteRepository.findAllById(noteIds).toSet();
+                        Set<Note> notes = noteRepository.findAllById(noteIds).stream().collect(Collectors.toSet());
                         existingCategory.setNotes(notes);
                     }
                     if (habitIds != null && !habitIds.isEmpty()) {
-                        Set<Habit> habits = habitRepository.findAllById(habitIds).toSet();
+                        Set<Habit> habits = habitRepository.findAllById(habitIds).stream().collect(Collectors.toSet());
                         existingCategory.setHabits(habits);
                     }
-
 
                     Category patchedCategory = categoryRepository.save(existingCategory);
                     return ResponseEntity.ok(patchedCategory);
                 })
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
-
 
     @Operation(summary = "Eliminar una categoría por ID")
     @ApiResponses(value = {
