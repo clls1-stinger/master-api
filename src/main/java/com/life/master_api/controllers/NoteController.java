@@ -1,7 +1,13 @@
 package com.life.master_api.controllers;
 
+import com.life.master_api.entities.Category;
+import com.life.master_api.entities.Habit;
 import com.life.master_api.entities.Note;
+import com.life.master_api.entities.Task;
+import com.life.master_api.repositories.CategoryRepository;
+import com.life.master_api.repositories.HabitRepository;
 import com.life.master_api.repositories.NoteRepository;
+import com.life.master_api.repositories.TaskRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -14,15 +20,23 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/notes")
 public class NoteController {
 
     private final NoteRepository noteRepository;
+    private final CategoryRepository categoryRepository;
+    private final TaskRepository taskRepository;
+    private final HabitRepository habitRepository;
 
-    public NoteController(NoteRepository noteRepository) {
+    public NoteController(NoteRepository noteRepository, CategoryRepository categoryRepository, TaskRepository taskRepository, HabitRepository habitRepository) {
         this.noteRepository = noteRepository;
+        this.categoryRepository = categoryRepository;
+        this.taskRepository = taskRepository;
+        this.habitRepository = habitRepository;
     }
 
     @Operation(summary = "Obtener todas las notas")
@@ -40,8 +54,25 @@ public class NoteController {
     })
     // POST /notes
     @PostMapping
-    public ResponseEntity<Note> createNote(@Valid @RequestBody Note note) {
+    public ResponseEntity<Note> createNote(@Valid @RequestBody Note note,
+                                           @RequestParam(value = "categoryIds", required = false) List<Long> categoryIds,
+                                           @RequestParam(value = "taskIds", required = false) List<Long> taskIds,
+                                           @RequestParam(value = "habitIds", required = false) List<Long> habitIds) {
         note.setCreation(new Date());
+
+        if (categoryIds != null && !categoryIds.isEmpty()) {
+            Set<Category> categories = categoryRepository.findAllById(categoryIds).stream().collect(Collectors.toSet());
+            note.setCategories(categories);
+        }
+        if (taskIds != null && !taskIds.isEmpty()) {
+            Set<Task> tasks = taskRepository.findAllById(taskIds).stream().collect(Collectors.toSet());
+            note.setTasks(tasks);
+        }
+        if (habitIds != null && !habitIds.isEmpty()) {
+            Set<Habit> habits = habitRepository.findAllById(habitIds).stream().collect(Collectors.toSet());
+            note.setHabits(habits);
+        }
+
         Note savedNote = noteRepository.save(note);
         return new ResponseEntity<>(savedNote, HttpStatus.CREATED);
     }
@@ -67,11 +98,34 @@ public class NoteController {
     })
     // PUT /notes/{id}
     @PutMapping("/{id}")
-    public ResponseEntity<Note> updateNote(@Parameter(description = "ID de la nota a actualizar") @PathVariable Long id, @Valid @RequestBody Note noteDetails) {
+    public ResponseEntity<Note> updateNote(@Parameter(description = "ID de la nota a actualizar") @PathVariable Long id, @Valid @RequestBody Note noteDetails,
+                                           @RequestParam(value = "categoryIds", required = false) List<Long> categoryIds,
+                                           @RequestParam(value = "taskIds", required = false) List<Long> taskIds,
+                                           @RequestParam(value = "habitIds", required = false) List<Long> habitIds) {
         return noteRepository.findById(id)
                 .map(existingNote -> {
                     existingNote.setTitle(noteDetails.getTitle());
                     existingNote.setNote(noteDetails.getNote());
+
+                    if (categoryIds != null && !categoryIds.isEmpty()) {
+                        Set<Category> categories = categoryRepository.findAllById(categoryIds).stream().collect(Collectors.toSet());
+                        existingNote.setCategories(categories);
+                    } else {
+                        existingNote.getCategories().clear();
+                    }
+                    if (taskIds != null && !taskIds.isEmpty()) {
+                        Set<Task> tasks = taskRepository.findAllById(taskIds).stream().collect(Collectors.toSet());
+                        existingNote.setTasks(tasks);
+                    } else {
+                        existingNote.getTasks().clear();
+                    }
+                    if (habitIds != null && !habitIds.isEmpty()) {
+                        Set<Habit> habits = habitRepository.findAllById(habitIds).stream().collect(Collectors.toSet());
+                        existingNote.setHabits(habits);
+                    } else {
+                        existingNote.getHabits().clear();
+                    }
+
                     Note updatedNote = noteRepository.save(existingNote);
                     return ResponseEntity.ok(updatedNote);
                 })
@@ -85,7 +139,10 @@ public class NoteController {
     })
     // PATCH /notes/{id}
     @PatchMapping("/{id}")
-    public ResponseEntity<Note> partialUpdateNote(@Parameter(description = "ID de la nota a actualizar") @PathVariable Long id, @RequestBody Note noteDetails) {
+    public ResponseEntity<Note> partialUpdateNote(@Parameter(description = "ID de la nota a actualizar") @PathVariable Long id, @RequestBody Note noteDetails,
+                                                  @RequestParam(value = "categoryIds", required = false) List<Long> categoryIds,
+                                                  @RequestParam(value = "taskIds", required = false) List<Long> taskIds,
+                                                  @RequestParam(value = "habitIds", required = false) List<Long> habitIds) {
         return noteRepository.findById(id)
                 .map(existingNote -> {
                     if (noteDetails.getTitle() != null) {
@@ -94,6 +151,20 @@ public class NoteController {
                     if (noteDetails.getNote() != null) {
                         existingNote.setNote(noteDetails.getNote());
                     }
+
+                    if (categoryIds != null && !categoryIds.isEmpty()) {
+                        Set<Category> categories = categoryRepository.findAllById(categoryIds).stream().collect(Collectors.toSet());
+                        existingNote.setCategories(categories);
+                    }
+                    if (taskIds != null && !taskIds.isEmpty()) {
+                        Set<Task> tasks = taskRepository.findAllById(taskIds).stream().collect(Collectors.toSet());
+                        existingNote.setTasks(tasks);
+                    }
+                    if (habitIds != null && !habitIds.isEmpty()) {
+                        Set<Habit> habits = habitRepository.findAllById(habitIds).stream().collect(Collectors.toSet());
+                        existingNote.setHabits(habits);
+                    }
+
                     Note updatedNote = noteRepository.save(existingNote);
                     return ResponseEntity.ok(updatedNote);
                 })
