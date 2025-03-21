@@ -39,4 +39,8 @@ public class Category {
 
     @ManyToMany(mappedBy = "categories")
     private Set<Habit> habits = new HashSet<>();
+
+    @JsonIgnore
+    @OneToMany(mappedBy = "categoryId", cascade = CascadeType.ALL, orphanRemoval = true) // Nueva relación con CategoryHistory
+    private Set<CategoryHistory> history = new HashSet<>(); // Campo para el historial
 }

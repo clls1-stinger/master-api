@@ -1,5 +1,6 @@
 package com.life.master_api.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.*;
 import lombok.Data;
@@ -36,19 +37,15 @@ public class Habit {
     )
     private Set<Category> categories = new HashSet<>();
 
-    @ManyToMany
-    @JoinTable(
-            name = "HabitNotes",
-            joinColumns = @JoinColumn(name = "HabitId"),
-            inverseJoinColumns = @JoinColumn(name = "NoteId")
-    )
+    @JsonIgnore
+    @ManyToMany(mappedBy = "habits")
     private Set<Note> notes = new HashSet<>();
 
-    @ManyToMany
-    @JoinTable(
-            name = "HabitTasks",
-            joinColumns = @JoinColumn(name = "HabitId"),
-            inverseJoinColumns = @JoinColumn(name = "TaskId")
-    )
+    @JsonIgnore
+    @ManyToMany(mappedBy = "habits")
     private Set<Task> tasks = new HashSet<>();
+
+    @JsonIgnore
+    @OneToMany(mappedBy = "habitId", cascade = CascadeType.ALL, orphanRemoval = true) // Nueva relación con HabitHistory
+    private Set<HabitHistory> history = new HashSet<>(); // Campo para el historial
 }

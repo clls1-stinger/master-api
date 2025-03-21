@@ -47,6 +47,7 @@ public class Note {
     )
     private Set<Habit> habits = new HashSet<>();
 
+<<<<<<< Updated upstream
 
     @ManyToMany
     @JoinTable(
@@ -54,5 +55,13 @@ public class Note {
             joinColumns = @JoinColumn(name = "NoteId"),
             inverseJoinColumns = @JoinColumn(name = "TaskId")
     )
+=======
+    @JsonIgnore
+    @ManyToMany(mappedBy = "notes")
+>>>>>>> Stashed changes
     private Set<Task> tasks = new HashSet<>();
+
+    @JsonIgnore
+    @OneToMany(mappedBy = "noteId", cascade = CascadeType.ALL, orphanRemoval = true) // Nueva relación con NoteHistory
+    private Set<NoteHistory> history = new HashSet<>(); // Campo para el historial
 }

@@ -55,4 +55,8 @@ public class Task {
             inverseJoinColumns = @JoinColumn(name = "NoteId")
     )
     private Set<Note> notes = new HashSet<>();
+
+    @JsonIgnore
+    @OneToMany(mappedBy = "taskId", cascade = CascadeType.ALL, orphanRemoval = true) // Nueva relación con TaskHistory
+    private Set<TaskHistory> history = new HashSet<>(); // Campo para el historial
 }

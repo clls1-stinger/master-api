@@ -3,9 +3,11 @@ package com.life.master_api.controllers;
 import com.life.master_api.entities.Category;
 import com.life.master_api.entities.Habit;
 import com.life.master_api.entities.Note;
+import com.life.master_api.entities.NoteHistory;
 import com.life.master_api.entities.Task;
 import com.life.master_api.repositories.CategoryRepository;
 import com.life.master_api.repositories.HabitRepository;
+import com.life.master_api.repositories.NoteHistoryRepository;
 import com.life.master_api.repositories.NoteRepository;
 import com.life.master_api.repositories.TaskRepository;
 import io.swagger.v3.oas.annotations.Operation;
@@ -17,6 +19,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -28,12 +32,22 @@ import java.util.stream.Collectors;
 public class NoteController {
 
     private final NoteRepository noteRepository;
+    private final NoteHistoryRepository noteHistoryRepository;
     private final CategoryRepository categoryRepository;
     private final TaskRepository taskRepository;
     private final HabitRepository habitRepository;
 
+<<<<<<< Updated upstream
     public NoteController(NoteRepository noteRepository, CategoryRepository categoryRepository, TaskRepository taskRepository, HabitRepository habitRepository) {
+=======
+    public NoteController(NoteRepository noteRepository,
+                          NoteHistoryRepository noteHistoryRepository,
+                          CategoryRepository categoryRepository,
+                          TaskRepository taskRepository,
+                          HabitRepository habitRepository) {
+>>>>>>> Stashed changes
         this.noteRepository = noteRepository;
+        this.noteHistoryRepository = noteHistoryRepository;
         this.categoryRepository = categoryRepository;
         this.taskRepository = taskRepository;
         this.habitRepository = habitRepository;
@@ -98,12 +112,20 @@ public class NoteController {
     })
     // PUT /notes/{id}
     @PutMapping("/{id}")
+<<<<<<< Updated upstream
     public ResponseEntity<Note> updateNote(@Parameter(description = "ID de la nota a actualizar") @PathVariable Long id, @Valid @RequestBody Note noteDetails,
                                            @RequestParam(value = "categoryIds", required = false) List<Long> categoryIds,
                                            @RequestParam(value = "taskIds", required = false) List<Long> taskIds,
                                            @RequestParam(value = "habitIds", required = false) List<Long> habitIds) {
+=======
+    public ResponseEntity<Note> updateNote(@Parameter(description = "ID de la nota a actualizar") @PathVariable Long id,
+                                           @Valid @RequestBody Note noteDetails) {
+>>>>>>> Stashed changes
         return noteRepository.findById(id)
                 .map(existingNote -> {
+                    // Guarda el historial antes de actualizar
+                    saveNoteHistory(existingNote);
+
                     existingNote.setTitle(noteDetails.getTitle());
                     existingNote.setNote(noteDetails.getNote());
 
@@ -139,12 +161,20 @@ public class NoteController {
     })
     // PATCH /notes/{id}
     @PatchMapping("/{id}")
+<<<<<<< Updated upstream
     public ResponseEntity<Note> partialUpdateNote(@Parameter(description = "ID de la nota a actualizar") @PathVariable Long id, @RequestBody Note noteDetails,
                                                   @RequestParam(value = "categoryIds", required = false) List<Long> categoryIds,
                                                   @RequestParam(value = "taskIds", required = false) List<Long> taskIds,
                                                   @RequestParam(value = "habitIds", required = false) List<Long> habitIds) {
+=======
+    public ResponseEntity<Note> patchNote(@Parameter(description = "ID de la nota a actualizar") @PathVariable Long id,
+                                          @RequestBody Note noteDetails) {
+>>>>>>> Stashed changes
         return noteRepository.findById(id)
                 .map(existingNote -> {
+                    // Guarda el historial antes de actualizar
+                    saveNoteHistory(existingNote);
+
                     if (noteDetails.getTitle() != null) {
                         existingNote.setTitle(noteDetails.getTitle());
                     }
@@ -186,4 +216,107 @@ public class NoteController {
                 })
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
+<<<<<<< Updated upstream
+=======
+
+    // Endpoints para historial de notas
+
+    @Operation(summary = "Obtener el historial de versiones de una nota")
+    @GetMapping("/{id}/history")
+    public ResponseEntity<List<NoteHistory>> getNoteHistory(@Parameter(description = "ID de la nota") @PathVariable Long id) {
+        return noteRepository.findById(id)
+                .map(note -> {
+                    List<NoteHistory> historyList = new ArrayList<>(note.getHistory());
+                    historyList.sort(Comparator.comparing(NoteHistory::getModificationTimestamp).reversed()); // Ordenar por fecha descendente
+                    return ResponseEntity.ok(historyList);
+                })
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    @Operation(summary = "Obtener una versión específica del historial de nota")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Versión del historial de nota encontrada"),
+            @ApiResponse(responseCode = "404", description = "Versión del historial de nota no encontrada")
+    })
+    @GetMapping("/{id}/history/{historyId}")
+    public ResponseEntity<NoteHistory> getNoteHistoryVersion(
+            @Parameter(description = "ID de la nota") @PathVariable Long id,
+            @Parameter(description = "ID del historial de la nota") @PathVariable Long historyId) {
+        return noteHistoryRepository.findById(historyId)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+
+    // Métodos auxiliares
+
+    private void saveNoteHistory(Note note) {
+        NoteHistory history = new NoteHistory();
+        history.setNoteId(note.getId());
+        history.setTitle(note.getTitle());
+        history.setNote(note.getNote());
+        history.setCreation(note.getCreation());
+        history.setModificationTimestamp(new Date()); // Fecha actual como timestamp de modificación
+        noteHistoryRepository.save(history);
+    }
+
+
+    // Endpoints para gestionar relaciones (sin cambios en esta parte por ahora)
+
+    @Operation(summary = "Obtener todas las categorías de una nota")
+    @GetMapping("/{id}/categories")
+    public ResponseEntity<Set<Category>> getNoteCategories(@PathVariable Long id) {
+        return noteRepository.findById(id)
+                .map(note -> ResponseEntity.ok(note.getCategories()))
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    @Operation(summary = "Agregar una categoría a una nota")
+    @PostMapping("/{noteId}/categories/{categoryId}")
+    public ResponseEntity<Void> addCategoryToNote(@PathVariable Long noteId, @PathVariable Long categoryId) {
+        Optional<Note> noteOpt = noteRepository.findById(noteId);
+        Optional<Category> categoryOpt = categoryRepository.findById(categoryId);
+
+        if (noteOpt.isPresent() && categoryOpt.isPresent()) {
+            Note note = noteOpt.get();
+            note.getCategories().add(categoryOpt.get());
+            noteRepository.save(note);
+            return ResponseEntity.status(HttpStatus.CREATED).build();
+        }
+
+        return ResponseEntity.notFound().build();
+    }
+
+    @Operation(summary = "Eliminar una categoría de una nota")
+    @DeleteMapping("/{noteId}/categories/{categoryId}")
+    public ResponseEntity<Void> removeCategoryFromNote(@PathVariable Long noteId, @PathVariable Long categoryId) {
+        Optional<Note> noteOpt = noteRepository.findById(noteId);
+        Optional<Category> categoryOpt = categoryRepository.findById(categoryId);
+
+        if (noteOpt.isPresent() && categoryOpt.isPresent()) {
+            Note note = noteOpt.get();
+            note.getCategories().remove(categoryOpt.get());
+            noteRepository.save(note);
+            return ResponseEntity.noContent().build();
+        }
+
+        return ResponseEntity.notFound().build();
+    }
+
+    @Operation(summary = "Obtener todas las tareas relacionadas con una nota")
+    @GetMapping("/{id}/tasks")
+    public ResponseEntity<Set<Task>> getNoteTasks(@PathVariable Long id) {
+        return noteRepository.findById(id)
+                .map(note -> ResponseEntity.ok(note.getTasks()))
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    @Operation(summary = "Obtener todos los hábitos relacionados con una nota")
+    @GetMapping("/{id}/habits")
+    public ResponseEntity<Set<Habit>> getNoteHabits(@PathVariable Long id) {
+        return noteRepository.findById(id)
+                .map(note -> ResponseEntity.ok(note.getHabits()))
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+>>>>>>> Stashed changes
 }
