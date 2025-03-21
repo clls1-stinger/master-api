@@ -3,9 +3,11 @@ package com.life.master_api.controllers;
 import com.life.master_api.entities.Category;
 import com.life.master_api.entities.Habit;
 import com.life.master_api.entities.Note;
+import com.life.master_api.entities.NoteHistory;
 import com.life.master_api.entities.Task;
 import com.life.master_api.repositories.CategoryRepository;
 import com.life.master_api.repositories.HabitRepository;
+import com.life.master_api.repositories.NoteHistoryRepository;
 import com.life.master_api.repositories.NoteRepository;
 import com.life.master_api.repositories.TaskRepository;
 import io.swagger.v3.oas.annotations.Operation;
@@ -27,15 +29,18 @@ import java.util.Set;
 public class NoteController {
 
     private final NoteRepository noteRepository;
+    private final NoteHistoryRepository noteHistoryRepository;
     private final CategoryRepository categoryRepository;
     private final TaskRepository taskRepository;
     private final HabitRepository habitRepository;
 
-    public NoteController(NoteRepository noteRepository, 
-                         CategoryRepository categoryRepository, 
-                         TaskRepository taskRepository, 
-                         HabitRepository habitRepository) {
+    public NoteController(NoteRepository noteRepository,
+                            NoteHistoryRepository noteHistoryRepository,
+                            CategoryRepository categoryRepository,
+                            TaskRepository taskRepository,
+                            HabitRepository habitRepository) {
         this.noteRepository = noteRepository;
+        this.noteHistoryRepository = noteHistoryRepository;
         this.categoryRepository = categoryRepository;
         this.taskRepository = taskRepository;
         this.habitRepository = habitRepository;
@@ -79,10 +84,13 @@ public class NoteController {
             @ApiResponse(responseCode = "400", description = "Solicitud inválida")
     })
     @PutMapping("/{id}")
-    public ResponseEntity<Note> updateNote(@Parameter(description = "ID de la nota a actualizar") @PathVariable Long id, 
+    public ResponseEntity<Note> updateNote(@Parameter(description = "ID de la nota a actualizar") @PathVariable Long id,
                                           @Valid @RequestBody Note noteDetails) {
         return noteRepository.findById(id)
                 .map(existingNote -> {
+                    // Save history before update
+                    saveNoteHistory(existingNote);
+
                     existingNote.setTitle(noteDetails.getTitle());
                     existingNote.setNote(noteDetails.getNote());
                     Note updatedNote = noteRepository.save(existingNote);
@@ -97,10 +105,13 @@ public class NoteController {
             @ApiResponse(responseCode = "404", description = "Nota no encontrada")
     })
     @PatchMapping("/{id}")
-    public ResponseEntity<Note> partialUpdateNote(@Parameter(description = "ID de la nota a actualizar") @PathVariable Long id, 
+    public ResponseEntity<Note> partialUpdateNote(@Parameter(description = "ID de la nota a actualizar") @PathVariable Long id,
                                                  @RequestBody Note noteDetails) {
         return noteRepository.findById(id)
                 .map(existingNote -> {
+                    // Save history before update
+                    saveNoteHistory(existingNote);
+
                     if (noteDetails.getTitle() != null) {
                         existingNote.setTitle(noteDetails.getTitle());
                     }
@@ -143,14 +154,14 @@ public class NoteController {
     public ResponseEntity<Void> addCategoryToNote(@PathVariable Long noteId, @PathVariable Long categoryId) {
         Optional<Note> noteOpt = noteRepository.findById(noteId);
         Optional<Category> categoryOpt = categoryRepository.findById(categoryId);
-        
+
         if (noteOpt.isPresent() && categoryOpt.isPresent()) {
             Note note = noteOpt.get();
             note.getCategories().add(categoryOpt.get());
             noteRepository.save(note);
             return ResponseEntity.status(HttpStatus.CREATED).build();
         }
-        
+
         return ResponseEntity.notFound().build();
     }
 
@@ -159,14 +170,14 @@ public class NoteController {
     public ResponseEntity<Void> removeCategoryFromNote(@PathVariable Long noteId, @PathVariable Long categoryId) {
         Optional<Note> noteOpt = noteRepository.findById(noteId);
         Optional<Category> categoryOpt = categoryRepository.findById(categoryId);
-        
+
         if (noteOpt.isPresent() && categoryOpt.isPresent()) {
             Note note = noteOpt.get();
             note.getCategories().remove(categoryOpt.get());
             noteRepository.save(note);
             return ResponseEntity.noContent().build();
         }
-        
+
         return ResponseEntity.notFound().build();
     }
 
@@ -183,14 +194,14 @@ public class NoteController {
     public ResponseEntity<Void> addTaskToNote(@PathVariable Long noteId, @PathVariable Long taskId) {
         Optional<Note> noteOpt = noteRepository.findById(noteId);
         Optional<Task> taskOpt = taskRepository.findById(taskId);
-        
+
         if (noteOpt.isPresent() && taskOpt.isPresent()) {
             Note note = noteOpt.get();
             note.getTasks().add(taskOpt.get());
             noteRepository.save(note);
             return ResponseEntity.status(HttpStatus.CREATED).build();
         }
-        
+
         return ResponseEntity.notFound().build();
     }
 
@@ -199,14 +210,14 @@ public class NoteController {
     public ResponseEntity<Void> removeTaskFromNote(@PathVariable Long noteId, @PathVariable Long taskId) {
         Optional<Note> noteOpt = noteRepository.findById(noteId);
         Optional<Task> taskOpt = taskRepository.findById(taskId);
-        
+
         if (noteOpt.isPresent() && taskOpt.isPresent()) {
             Note note = noteOpt.get();
             note.getTasks().remove(taskOpt.get());
             noteRepository.save(note);
             return ResponseEntity.noContent().build();
         }
-        
+
         return ResponseEntity.notFound().build();
     }
 
@@ -223,14 +234,14 @@ public class NoteController {
     public ResponseEntity<Void> addHabitToNote(@PathVariable Long noteId, @PathVariable Long habitId) {
         Optional<Note> noteOpt = noteRepository.findById(noteId);
         Optional<Habit> habitOpt = habitRepository.findById(habitId);
-        
+
         if (noteOpt.isPresent() && habitOpt.isPresent()) {
             Note note = noteOpt.get();
             note.getHabits().add(habitOpt.get());
             noteRepository.save(note);
             return ResponseEntity.status(HttpStatus.CREATED).build();
         }
-        
+
         return ResponseEntity.notFound().build();
     }
 
@@ -239,14 +250,50 @@ public class NoteController {
     public ResponseEntity<Void> removeHabitFromNote(@PathVariable Long noteId, @PathVariable Long habitId) {
         Optional<Note> noteOpt = noteRepository.findById(noteId);
         Optional<Habit> habitOpt = habitRepository.findById(habitId);
-        
+
         if (noteOpt.isPresent() && habitOpt.isPresent()) {
             Note note = noteOpt.get();
             note.getHabits().remove(habitOpt.get());
             noteRepository.save(note);
             return ResponseEntity.noContent().build();
         }
-        
+
         return ResponseEntity.notFound().build();
+    }
+
+    // History Endpoints
+
+    @Operation(summary = "Obtener el historial de versiones de una nota")
+    @GetMapping("/{id}/history")
+    public ResponseEntity<List<NoteHistory>> getNoteHistory(@Parameter(description = "ID de la nota") @PathVariable Long id) {
+        List<NoteHistory> history = noteHistoryRepository.findByNote_IdOrderByVersionIdDesc(id);
+        return ResponseEntity.ok(history);
+    }
+
+    @Operation(summary = "Obtener una versión específica del historial de una nota")
+    @GetMapping("/{id}/history/{versionId}")
+    public ResponseEntity<NoteHistory> getNoteHistoryByVersion(
+            @Parameter(description = "ID de la nota") @PathVariable Long id,
+            @Parameter(description = "ID de la versión del historial") @PathVariable Long versionId) {
+        List<NoteHistory> historyVersion = noteHistoryRepository.findByNote_IdAndVersionId(id, versionId);
+        if (!historyVersion.isEmpty()) {
+            return ResponseEntity.ok(historyVersion.get(0)); // Assuming versionId is unique for each note
+        } else {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+
+    private void saveNoteHistory(Note note) {
+        NoteHistory history = new NoteHistory();
+        history.setNote(note);
+        history.setTitle(note.getTitle());
+        history.setNoteContent(note.getNote()); // Corrected line: using setNoteContent
+        history.setCreation(note.getCreation());
+        history.setTimestamp(new Date()); // Current timestamp
+        // You might want to implement a more robust versioning logic here, e.g., incrementing versionId
+        // For simplicity, we are not setting versionId for now.
+
+        noteHistoryRepository.save(history);
     }
 }

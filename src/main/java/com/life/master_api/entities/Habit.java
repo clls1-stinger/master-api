@@ -1,5 +1,7 @@
 package com.life.master_api.entities;
 
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
@@ -10,6 +12,7 @@ import lombok.EqualsAndHashCode;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.List;
 
 @Entity
 @Table(name = "Habits")
@@ -54,4 +57,8 @@ public class Habit {
             inverseJoinColumns = @JoinColumn(name = "TaskId")
     )
     private Set<Task> tasks = new HashSet<>();
+
+    @OneToMany(mappedBy = "habit", cascade = CascadeType.ALL, orphanRemoval = false, fetch = FetchType.LAZY)
+    @JsonIgnore
+    private List<HabitHistory> history;
 }

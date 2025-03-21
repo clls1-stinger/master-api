@@ -2,9 +2,11 @@ package com.life.master_api.controllers;
 
 import com.life.master_api.entities.Category;
 import com.life.master_api.entities.Habit;
+import com.life.master_api.entities.HabitHistory;
 import com.life.master_api.entities.Note;
 import com.life.master_api.entities.Task;
 import com.life.master_api.repositories.CategoryRepository;
+import com.life.master_api.repositories.HabitHistoryRepository;
 import com.life.master_api.repositories.HabitRepository;
 import com.life.master_api.repositories.NoteRepository;
 import com.life.master_api.repositories.TaskRepository;
@@ -27,15 +29,18 @@ import java.util.Set;
 public class HabitController {
 
     private final HabitRepository habitRepository;
+    private final HabitHistoryRepository habitHistoryRepository;
     private final CategoryRepository categoryRepository;
     private final NoteRepository noteRepository;
     private final TaskRepository taskRepository;
 
-    public HabitController(HabitRepository habitRepository, 
-                          CategoryRepository categoryRepository, 
-                          NoteRepository noteRepository, 
-                          TaskRepository taskRepository) {
+    public HabitController(HabitRepository habitRepository,
+                             HabitHistoryRepository habitHistoryRepository,
+                             CategoryRepository categoryRepository,
+                             NoteRepository noteRepository,
+                             TaskRepository taskRepository) {
         this.habitRepository = habitRepository;
+        this.habitHistoryRepository = habitHistoryRepository;
         this.categoryRepository = categoryRepository;
         this.noteRepository = noteRepository;
         this.taskRepository = taskRepository;
@@ -79,10 +84,13 @@ public class HabitController {
             @ApiResponse(responseCode = "400", description = "Solicitud inválida")
     })
     @PutMapping("/{id}")
-    public ResponseEntity<Habit> updateHabit(@Parameter(description = "ID del hábito a actualizar") @PathVariable Long id, 
+    public ResponseEntity<Habit> updateHabit(@Parameter(description = "ID del hábito a actualizar") @PathVariable Long id,
                                             @Valid @RequestBody Habit habitDetails) {
         return habitRepository.findById(id)
                 .map(existingHabit -> {
+                    // Save history before update
+                    saveHabitHistory(existingHabit);
+
                     existingHabit.setName(habitDetails.getName());
                     Habit updatedHabit = habitRepository.save(existingHabit);
                     return ResponseEntity.ok(updatedHabit);
@@ -96,10 +104,13 @@ public class HabitController {
             @ApiResponse(responseCode = "404", description = "Hábito no encontrado")
     })
     @PatchMapping("/{id}")
-    public ResponseEntity<Habit> partialUpdateHabit(@Parameter(description = "ID del hábito a actualizar") @PathVariable Long id, 
+    public ResponseEntity<Habit> partialUpdateHabit(@Parameter(description = "ID del hábito a actualizar") @PathVariable Long id,
                                                    @RequestBody Habit habitDetails) {
         return habitRepository.findById(id)
                 .map(existingHabit -> {
+                    // Save history before update
+                    saveHabitHistory(existingHabit);
+
                     if (habitDetails.getName() != null) {
                         existingHabit.setName(habitDetails.getName());
                     }
@@ -139,14 +150,14 @@ public class HabitController {
     public ResponseEntity<Void> addCategoryToHabit(@PathVariable Long habitId, @PathVariable Long categoryId) {
         Optional<Habit> habitOpt = habitRepository.findById(habitId);
         Optional<Category> categoryOpt = categoryRepository.findById(categoryId);
-        
+
         if (habitOpt.isPresent() && categoryOpt.isPresent()) {
             Habit habit = habitOpt.get();
             habit.getCategories().add(categoryOpt.get());
             habitRepository.save(habit);
             return ResponseEntity.status(HttpStatus.CREATED).build();
         }
-        
+
         return ResponseEntity.notFound().build();
     }
 
@@ -155,14 +166,14 @@ public class HabitController {
     public ResponseEntity<Void> removeCategoryFromHabit(@PathVariable Long habitId, @PathVariable Long categoryId) {
         Optional<Habit> habitOpt = habitRepository.findById(habitId);
         Optional<Category> categoryOpt = categoryRepository.findById(categoryId);
-        
+
         if (habitOpt.isPresent() && categoryOpt.isPresent()) {
             Habit habit = habitOpt.get();
             habit.getCategories().remove(categoryOpt.get());
             habitRepository.save(habit);
             return ResponseEntity.noContent().build();
         }
-        
+
         return ResponseEntity.notFound().build();
     }
 
@@ -179,14 +190,14 @@ public class HabitController {
     public ResponseEntity<Void> addNoteToHabit(@PathVariable Long habitId, @PathVariable Long noteId) {
         Optional<Habit> habitOpt = habitRepository.findById(habitId);
         Optional<Note> noteOpt = noteRepository.findById(noteId);
-        
+
         if (habitOpt.isPresent() && noteOpt.isPresent()) {
             Habit habit = habitOpt.get();
             habit.getNotes().add(noteOpt.get());
             habitRepository.save(habit);
             return ResponseEntity.status(HttpStatus.CREATED).build();
         }
-        
+
         return ResponseEntity.notFound().build();
     }
 
@@ -195,14 +206,14 @@ public class HabitController {
     public ResponseEntity<Void> removeNoteFromHabit(@PathVariable Long habitId, @PathVariable Long noteId) {
         Optional<Habit> habitOpt = habitRepository.findById(habitId);
         Optional<Note> noteOpt = noteRepository.findById(noteId);
-        
-        if (habitOpt.isPresent() && noteOpt.isPresent()) {
+
+        if (habitOpt.isPresent() && habitOpt.isPresent()) {
             Habit habit = habitOpt.get();
             habit.getNotes().remove(noteOpt.get());
             habitRepository.save(habit);
             return ResponseEntity.noContent().build();
         }
-        
+
         return ResponseEntity.notFound().build();
     }
 
@@ -219,14 +230,14 @@ public class HabitController {
     public ResponseEntity<Void> addTaskToHabit(@PathVariable Long habitId, @PathVariable Long taskId) {
         Optional<Habit> habitOpt = habitRepository.findById(habitId);
         Optional<Task> taskOpt = taskRepository.findById(taskId);
-        
+
         if (habitOpt.isPresent() && taskOpt.isPresent()) {
             Habit habit = habitOpt.get();
             habit.getTasks().add(taskOpt.get());
             habitRepository.save(habit);
             return ResponseEntity.status(HttpStatus.CREATED).build();
         }
-        
+
         return ResponseEntity.notFound().build();
     }
 
@@ -235,14 +246,49 @@ public class HabitController {
     public ResponseEntity<Void> removeTaskFromHabit(@PathVariable Long habitId, @PathVariable Long taskId) {
         Optional<Habit> habitOpt = habitRepository.findById(habitId);
         Optional<Task> taskOpt = taskRepository.findById(taskId);
-        
+
         if (habitOpt.isPresent() && taskOpt.isPresent()) {
             Habit habit = habitOpt.get();
             habit.getTasks().remove(taskOpt.get());
             habitRepository.save(habit);
             return ResponseEntity.noContent().build();
         }
-        
+
         return ResponseEntity.notFound().build();
+    }
+
+    // History Endpoints
+
+    @Operation(summary = "Obtener el historial de versiones de un hábito")
+    @GetMapping("/{id}/history")
+    public ResponseEntity<List<HabitHistory>> getHabitHistory(@Parameter(description = "ID del hábito") @PathVariable Long id) {
+        List<HabitHistory> history = habitHistoryRepository.findByHabit_IdOrderByVersionIdDesc(id);
+        return ResponseEntity.ok(history);
+    }
+
+    @Operation(summary = "Obtener una versión específica del historial de un hábito")
+    @GetMapping("/{id}/history/{versionId}")
+    public ResponseEntity<HabitHistory> getHabitHistoryByVersion(
+            @Parameter(description = "ID del hábito") @PathVariable Long id,
+            @Parameter(description = "ID de la versión del historial") @PathVariable Long versionId) {
+        List<HabitHistory> historyVersion = habitHistoryRepository.findByHabit_IdAndVersionId(id, versionId);
+        if (!historyVersion.isEmpty()) {
+            return ResponseEntity.ok(historyVersion.get(0)); // Assuming versionId is unique for each habit
+        } else {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+
+    private void saveHabitHistory(Habit habit) {
+        HabitHistory history = new HabitHistory();
+        history.setHabit(habit);
+        history.setName(habit.getName());
+        history.setCreation(habit.getCreation());
+        history.setTimestamp(new Date()); // Current timestamp
+        // You might want to implement a more robust versioning logic here, e.g., incrementing versionId
+        // For simplicity, we are not setting versionId for now.
+
+        habitHistoryRepository.save(history);
     }
 }

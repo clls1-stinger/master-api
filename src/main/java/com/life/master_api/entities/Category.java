@@ -11,6 +11,7 @@ import lombok.EqualsAndHashCode;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.List; // Import List
 
 @Entity
 @Table(name = "Categories")
@@ -47,4 +48,8 @@ public class Category {
     @JsonIgnore
     @ManyToMany(mappedBy = "categories")
     private Set<Habit> habits = new HashSet<>();
+
+    @OneToMany(mappedBy = "category", cascade = CascadeType.ALL, orphanRemoval = false, fetch = FetchType.LAZY)
+    @JsonIgnore // Prevent infinite recursion during serialization
+    private List<CategoryHistory> history; // Add the history relationship
 }

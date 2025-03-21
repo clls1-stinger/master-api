@@ -11,6 +11,7 @@ import lombok.EqualsAndHashCode;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.List;
 
 @Entity
 @Table(name = "Task")
@@ -50,4 +51,8 @@ public class Task {
     @JsonIgnore
     @ManyToMany(mappedBy = "tasks")
     private Set<Note> notes = new HashSet<>();
+
+    @OneToMany(mappedBy = "task", cascade = CascadeType.ALL, orphanRemoval = false, fetch = FetchType.LAZY)
+    @JsonIgnore
+    private List<TaskHistory> history;
 }

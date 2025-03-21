@@ -4,9 +4,11 @@ import com.life.master_api.entities.Category;
 import com.life.master_api.entities.Habit;
 import com.life.master_api.entities.Note;
 import com.life.master_api.entities.Task;
+import com.life.master_api.entities.TaskHistory;
 import com.life.master_api.repositories.CategoryRepository;
 import com.life.master_api.repositories.HabitRepository;
 import com.life.master_api.repositories.NoteRepository;
+import com.life.master_api.repositories.TaskHistoryRepository;
 import com.life.master_api.repositories.TaskRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -28,15 +30,18 @@ import java.util.stream.Collectors;
 public class TaskController {
 
     private final TaskRepository taskRepository;
+    private final TaskHistoryRepository taskHistoryRepository;
     private final CategoryRepository categoryRepository;
     private final NoteRepository noteRepository;
     private final HabitRepository habitRepository;
 
-    public TaskController(TaskRepository taskRepository, 
-                         CategoryRepository categoryRepository, 
-                         NoteRepository noteRepository, 
-                         HabitRepository habitRepository) {
+    public TaskController(TaskRepository taskRepository,
+                            TaskHistoryRepository taskHistoryRepository,
+                            CategoryRepository categoryRepository,
+                            NoteRepository noteRepository,
+                            HabitRepository habitRepository) {
         this.taskRepository = taskRepository;
+        this.taskHistoryRepository = taskHistoryRepository;
         this.categoryRepository = categoryRepository;
         this.noteRepository = noteRepository;
         this.habitRepository = habitRepository;
@@ -80,10 +85,13 @@ public class TaskController {
             @ApiResponse(responseCode = "400", description = "Solicitud inválida")
     })
     @PutMapping("/{id}")
-    public ResponseEntity<Task> updateTask(@Parameter(description = "ID de la tarea a actualizar") @PathVariable Long id, 
+    public ResponseEntity<Task> updateTask(@Parameter(description = "ID de la tarea a actualizar") @PathVariable Long id,
                                           @Valid @RequestBody Task taskDetails) {
         return taskRepository.findById(id)
                 .map(existingTask -> {
+                    // Save history before update
+                    saveTaskHistory(existingTask);
+
                     existingTask.setTitle(taskDetails.getTitle());
                     existingTask.setDescription(taskDetails.getDescription());
                     Task updatedTask = taskRepository.save(existingTask);
@@ -98,10 +106,13 @@ public class TaskController {
             @ApiResponse(responseCode = "404", description = "Tarea no encontrada")
     })
     @PatchMapping("/{id}")
-    public ResponseEntity<Task> partialUpdateTask(@Parameter(description = "ID de la tarea a actualizar") @PathVariable Long id, 
+    public ResponseEntity<Task> partialUpdateTask(@Parameter(description = "ID de la tarea a actualizar") @PathVariable Long id,
                                                  @RequestBody Task taskDetails) {
         return taskRepository.findById(id)
                 .map(existingTask -> {
+                    // Save history before update
+                    saveTaskHistory(existingTask);
+
                     if (taskDetails.getTitle() != null) {
                         existingTask.setTitle(taskDetails.getTitle());
                     }
@@ -144,14 +155,14 @@ public class TaskController {
     public ResponseEntity<Void> addCategoryToTask(@PathVariable Long taskId, @PathVariable Long categoryId) {
         Optional<Task> taskOpt = taskRepository.findById(taskId);
         Optional<Category> categoryOpt = categoryRepository.findById(categoryId);
-        
+
         if (taskOpt.isPresent() && categoryOpt.isPresent()) {
             Task task = taskOpt.get();
             task.getCategories().add(categoryOpt.get());
             taskRepository.save(task);
             return ResponseEntity.status(HttpStatus.CREATED).build();
         }
-        
+
         return ResponseEntity.notFound().build();
     }
 
@@ -160,14 +171,14 @@ public class TaskController {
     public ResponseEntity<Void> removeCategoryFromTask(@PathVariable Long taskId, @PathVariable Long categoryId) {
         Optional<Task> taskOpt = taskRepository.findById(taskId);
         Optional<Category> categoryOpt = categoryRepository.findById(categoryId);
-        
-        if (taskOpt.isPresent() && categoryOpt.isPresent()) {
+
+        if (taskOpt.isPresent() && taskOpt.isPresent()) {
             Task task = taskOpt.get();
             task.getCategories().remove(categoryOpt.get());
             taskRepository.save(task);
             return ResponseEntity.noContent().build();
         }
-        
+
         return ResponseEntity.notFound().build();
     }
 
@@ -185,5 +196,41 @@ public class TaskController {
         return taskRepository.findById(id)
                 .map(task -> ResponseEntity.ok(task.getHabits()))
                 .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    // History Endpoints
+
+    @Operation(summary = "Obtener el historial de versiones de una tarea")
+    @GetMapping("/{id}/history")
+    public ResponseEntity<List<TaskHistory>> getTaskHistory(@Parameter(description = "ID de la tarea") @PathVariable Long id) {
+        List<TaskHistory> history = taskHistoryRepository.findByTask_IdOrderByVersionIdDesc(id);
+        return ResponseEntity.ok(history);
+    }
+
+    @Operation(summary = "Obtener una versión específica del historial de una tarea")
+    @GetMapping("/{id}/history/{versionId}")
+    public ResponseEntity<TaskHistory> getTaskHistoryByVersion(
+            @Parameter(description = "ID de la tarea") @PathVariable Long id,
+            @Parameter(description = "ID de la versión del historial") @PathVariable Long versionId) {
+        List<TaskHistory> historyVersion = taskHistoryRepository.findByTask_IdAndVersionId(id, versionId);
+        if (!historyVersion.isEmpty()) {
+            return ResponseEntity.ok(historyVersion.get(0)); // Assuming versionId is unique for each task
+        } else {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+
+    private void saveTaskHistory(Task task) {
+        TaskHistory history = new TaskHistory();
+        history.setTask(task);
+        history.setTitle(task.getTitle());
+        history.setDescription(task.getDescription());
+        history.setCreation(task.getCreation());
+        history.setTimestamp(new Date()); // Current timestamp
+        // You might want to implement a more robust versioning logic here, e.g., incrementing versionId
+        // For simplicity, we are not setting versionId for now.
+
+        taskHistoryRepository.save(history);
     }
 }
