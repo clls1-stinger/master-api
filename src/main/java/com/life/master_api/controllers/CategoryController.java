@@ -15,6 +15,10 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -47,8 +51,25 @@ public class CategoryController {
     @Operation(summary = "Obtener todas las categorías")
     @ApiResponse(responseCode = "200", description = "Lista de categorías obtenida exitosamente")
     @GetMapping
-    public ResponseEntity<List<Category>> getAllCategories() {
-        return ResponseEntity.ok(categoryRepository.findAll());
+    public ResponseEntity<Map<String, Object>> getAllCategories(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "id") String sortBy,
+            @RequestParam(defaultValue = "asc") String sortDir) {
+        
+        Sort sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name()) ? 
+                Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
+        
+        Pageable pageable = PageRequest.of(page, size, sort);
+        Page<Category> categoryPage = categoryRepository.findAll(pageable);
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("content", categoryPage.getContent());
+        response.put("currentPage", categoryPage.getNumber());
+        response.put("totalItems", categoryPage.getTotalElements());
+        response.put("totalPages", categoryPage.getTotalPages());
+        
+        return ResponseEntity.ok(response);
     }
 
     @Operation(summary = "Obtener una categoría por ID")
@@ -66,8 +87,26 @@ public class CategoryController {
     @Operation(summary = "Buscar categorías por nombre (parcial)")
     @ApiResponse(responseCode = "200", description = "Lista de categorías que coinciden con el nombre")
     @GetMapping("/search/by-name")
-    public ResponseEntity<List<Category>> getCategoriesByName(@Parameter(description = "Nombre a buscar en categorías") @RequestParam String name) {
-        return ResponseEntity.ok(categoryRepository.findByNameContains(name));
+    public ResponseEntity<Map<String, Object>> getCategoriesByName(
+            @Parameter(description = "Nombre a buscar en categorías") @RequestParam String name,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "id") String sortBy,
+            @RequestParam(defaultValue = "asc") String sortDir) {
+        
+        Sort sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name()) ? 
+                Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
+        
+        Pageable pageable = PageRequest.of(page, size, sort);
+        Page<Category> categoryPage = categoryRepository.findByNameContains(name, pageable);
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("content", categoryPage.getContent());
+        response.put("currentPage", categoryPage.getNumber());
+        response.put("totalItems", categoryPage.getTotalElements());
+        response.put("totalPages", categoryPage.getTotalPages());
+        
+        return ResponseEntity.ok(response);
     }
 
     @Operation(summary = "Crear una nueva categoría")
@@ -148,10 +187,56 @@ public class CategoryController {
 
     @Operation(summary = "Obtener todas las tareas de una categoría")
     @GetMapping("/{id}/tasks")
-    public ResponseEntity<Set<Task>> getCategoryTasks(@PathVariable Long id) {
-        return categoryRepository.findById(id)
-                .map(category -> ResponseEntity.ok(category.getTasks()))
-                .orElseGet(() -> ResponseEntity.notFound().build());
+    public ResponseEntity<Map<String, Object>> getCategoryTasks(
+            @PathVariable Long id,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "id") String sortBy,
+            @RequestParam(defaultValue = "asc") String sortDir) {
+        
+        Optional<Category> categoryOpt = categoryRepository.findById(id);
+        if (!categoryOpt.isPresent()) {
+            return ResponseEntity.notFound().build();
+        }
+        
+        Category category = categoryOpt.get();
+        List<Task> tasks = new ArrayList<>(category.getTasks());
+        
+        // Aplicar ordenamiento
+        Comparator<Task> comparator;
+        if (sortBy.equals("id")) {
+            comparator = Comparator.comparing(Task::getId);
+        } else if (sortBy.equals("title")) {
+            comparator = Comparator.comparing(Task::getTitle);
+        } else if (sortBy.equals("creation")) {
+            comparator = Comparator.comparing(Task::getCreation);
+        } else {
+            comparator = Comparator.comparing(Task::getId);
+        }
+        
+        if (sortDir.equalsIgnoreCase("desc")) {
+            comparator = comparator.reversed();
+        }
+        
+        tasks.sort(comparator);
+        
+        // Aplicar paginación
+        int totalItems = tasks.size();
+        int totalPages = (int) Math.ceil((double) totalItems / size);
+        
+        int fromIndex = page * size;
+        int toIndex = Math.min(fromIndex + size, totalItems);
+        
+        List<Task> pagedTasks = fromIndex < totalItems ? 
+                tasks.subList(fromIndex, toIndex) : new ArrayList<>();
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("content", pagedTasks);
+        response.put("currentPage", page);
+        response.put("totalItems", totalItems);
+        response.put("totalPages", totalPages);
+        
+        return ResponseEntity.ok(response);
     }
 
     @Operation(summary = "Agregar una tarea a una categoría")

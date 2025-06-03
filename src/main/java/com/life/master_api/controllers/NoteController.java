@@ -15,14 +15,22 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.ArrayList;
+import java.util.Comparator;
 
 @RestController
 @RequestMapping("/notes")
@@ -49,8 +57,25 @@ public class NoteController {
     @Operation(summary = "Obtener todas las notas")
     @ApiResponse(responseCode = "200", description = "Lista de notas obtenida exitosamente")
     @GetMapping
-    public ResponseEntity<List<Note>> getAllNotes() {
-        return ResponseEntity.ok(noteRepository.findAll());
+    public ResponseEntity<Map<String, Object>> getAllNotes(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "id") String sortBy,
+            @RequestParam(defaultValue = "asc") String sortDir) {
+        
+        Sort sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name()) ? 
+                Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
+        
+        Pageable pageable = PageRequest.of(page, size, sort);
+        Page<Note> notePage = noteRepository.findAll(pageable);
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("content", notePage.getContent());
+        response.put("currentPage", notePage.getNumber());
+        response.put("totalItems", notePage.getTotalElements());
+        response.put("totalPages", notePage.getTotalPages());
+        
+        return ResponseEntity.ok(response);
     }
 
     @Operation(summary = "Crear una nueva nota")
@@ -143,10 +168,56 @@ public class NoteController {
 
     @Operation(summary = "Obtener todas las categorías de una nota")
     @GetMapping("/{id}/categories")
-    public ResponseEntity<Set<Category>> getNoteCategories(@PathVariable Long id) {
-        return noteRepository.findById(id)
-                .map(note -> ResponseEntity.ok(note.getCategories()))
-                .orElseGet(() -> ResponseEntity.notFound().build());
+    public ResponseEntity<Map<String, Object>> getNoteCategories(
+            @PathVariable Long id,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "id") String sortBy,
+            @RequestParam(defaultValue = "asc") String sortDir) {
+        
+        Optional<Note> noteOpt = noteRepository.findById(id);
+        if (!noteOpt.isPresent()) {
+            return ResponseEntity.notFound().build();
+        }
+        
+        Note note = noteOpt.get();
+        List<Category> categories = new ArrayList<>(note.getCategories());
+        
+        // Aplicar ordenamiento
+        Comparator<Category> comparator;
+        if (sortBy.equals("id")) {
+            comparator = Comparator.comparing(Category::getId);
+        } else if (sortBy.equals("name")) {
+            comparator = Comparator.comparing(Category::getName);
+        } else if (sortBy.equals("creation")) {
+            comparator = Comparator.comparing(category -> category.getCreation());
+        } else {
+            comparator = Comparator.comparing(Category::getId);
+        }
+        
+        if (sortDir.equalsIgnoreCase("desc")) {
+            comparator = comparator.reversed();
+        }
+        
+        categories.sort(comparator);
+        
+        // Aplicar paginación
+        int totalItems = categories.size();
+        int totalPages = (int) Math.ceil((double) totalItems / size);
+        
+        int fromIndex = page * size;
+        int toIndex = Math.min(fromIndex + size, totalItems);
+        
+        List<Category> pagedCategories = fromIndex < totalItems ? 
+                categories.subList(fromIndex, toIndex) : new ArrayList<>();
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("content", pagedCategories);
+        response.put("currentPage", page);
+        response.put("totalItems", totalItems);
+        response.put("totalPages", totalPages);
+        
+        return ResponseEntity.ok(response);
     }
 
     @Operation(summary = "Agregar una categoría a una nota")

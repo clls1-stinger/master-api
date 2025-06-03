@@ -1,0 +1,3865 @@
+task-controller
+
+
+DELETE
+/tasks/{id}
+Eliminar una tarea por ID
+
+Parameters
+Try it out
+Name	Description
+id *
+integer($int64)
+(path)
+ID de la tarea a eliminar
+
+id
+Responses
+Code	Description	Links
+204	
+Tarea eliminada exitosamente
+
+No links
+404	
+Tarea no encontrada
+
+No links
+
+DELETE
+/tasks/{taskId}/categories/{categoryId}
+Eliminar una categoría de una tarea
+
+Parameters
+Try it out
+Name	Description
+taskId *
+integer($int64)
+(path)
+taskId
+categoryId *
+integer($int64)
+(path)
+categoryId
+Responses
+Code	Description	Links
+200	
+OK
+
+No links
+
+GET
+/tasks/{id}
+Obtener una tarea por ID
+
+Parameters
+Try it out
+Name	Description
+id *
+integer($int64)
+(path)
+ID de la tarea a obtener
+
+id
+Responses
+Code	Description	Links
+200	
+Tarea encontrada
+
+Media type
+
+*/*
+Controls Accept header.
+Example Value
+Schema
+{
+  "id": 9007199254740991,
+  "title": "string",
+  "description": "string",
+  "creation": "2025-05-04T09:01:40.189Z",
+  "categories": [
+    {
+      "id": 9007199254740991,
+      "name": "string",
+      "description": "string",
+      "creation": "2025-05-04T09:01:40.189Z"
+    }
+  ]
+}
+No links
+404	
+Tarea no encontrada
+
+Media type
+
+*/*
+Example Value
+Schema
+{
+  "id": 9007199254740991,
+  "title": "string",
+  "description": "string",
+  "creation": "2025-05-04T09:01:40.191Z",
+  "categories": [
+    {
+      "id": 9007199254740991,
+      "name": "string",
+      "description": "string",
+      "creation": "2025-05-04T09:01:40.191Z"
+    }
+  ]
+}
+No links
+
+GET
+/tasks
+Obtener todas las tareas
+
+Parameters
+Try it out
+No parameters
+
+Responses
+Code	Description	Links
+200	
+Lista de tareas obtenida exitosamente
+
+Media type
+
+*/*
+Controls Accept header.
+Example Value
+Schema
+[
+  {
+    "id": 9007199254740991,
+    "title": "string",
+    "description": "string",
+    "creation": "2025-05-04T09:01:40.193Z",
+    "categories": [
+      {
+        "id": 9007199254740991,
+        "name": "string",
+        "description": "string",
+        "creation": "2025-05-04T09:01:40.193Z"
+      }
+    ]
+  }
+]
+No links
+
+GET
+/tasks/{id}/notes
+Obtener todas las notas relacionadas con una tarea
+
+Parameters
+Try it out
+Name	Description
+id *
+integer($int64)
+(path)
+id
+Responses
+Code	Description	Links
+200	
+OK
+
+Media type
+
+*/*
+Controls Accept header.
+Example Value
+Schema
+[
+  {
+    "id": 9007199254740991,
+    "title": "string",
+    "note": "string",
+    "creation": "2025-05-04T09:01:40.196Z",
+    "categories": [
+      {
+        "id": 9007199254740991,
+        "name": "string",
+        "description": "string",
+        "creation": "2025-05-04T09:01:40.196Z"
+      }
+    ],
+    "tasks": [
+      {
+        "id": 9007199254740991,
+        "title": "string",
+        "description": "string",
+        "creation": "2025-05-04T09:01:40.196Z",
+        "categories": [
+          {
+            "id": 9007199254740991,
+            "name": "string",
+            "description": "string",
+            "creation": "2025-05-04T09:01:40.196Z"
+          }
+        ]
+      }
+    ]
+  }
+]
+No links
+
+GET
+/tasks/{id}/history
+Obtener el historial de versiones de una tarea
+
+Parameters
+Try it out
+Name	Description
+id *
+integer($int64)
+(path)
+ID de la tarea
+
+id
+Responses
+Code	Description	Links
+200	
+OK
+
+Media type
+
+*/*
+Controls Accept header.
+Example Value
+Schema
+[
+  {
+    "historyId": 9007199254740991,
+    "versionId": 9007199254740991,
+    "task": {
+      "id": 9007199254740991,
+      "title": "string",
+      "description": "string",
+      "creation": "2025-05-04T09:01:40.201Z",
+      "categories": [
+        {
+          "id": 9007199254740991,
+          "name": "string",
+          "description": "string",
+          "creation": "2025-05-04T09:01:40.201Z"
+        }
+      ]
+    },
+    "title": "string",
+    "description": "string",
+    "creation": "2025-05-04T09:01:40.201Z",
+    "timestamp": "2025-05-04T09:01:40.201Z"
+  }
+]
+No links
+
+GET
+/tasks/{id}/history/{versionId}
+Obtener una versión específica del historial de una tarea
+
+Parameters
+Try it out
+Name	Description
+id *
+integer($int64)
+(path)
+ID de la tarea
+
+id
+versionId *
+integer($int64)
+(path)
+ID de la versión del historial
+
+versionId
+Responses
+Code	Description	Links
+200	
+OK
+
+Media type
+
+*/*
+Controls Accept header.
+Example Value
+Schema
+{
+  "historyId": 9007199254740991,
+  "versionId": 9007199254740991,
+  "task": {
+    "id": 9007199254740991,
+    "title": "string",
+    "description": "string",
+    "creation": "2025-05-04T09:01:40.206Z",
+    "categories": [
+      {
+        "id": 9007199254740991,
+        "name": "string",
+        "description": "string",
+        "creation": "2025-05-04T09:01:40.206Z"
+      }
+    ]
+  },
+  "title": "string",
+  "description": "string",
+  "creation": "2025-05-04T09:01:40.206Z",
+  "timestamp": "2025-05-04T09:01:40.206Z"
+}
+No links
+
+GET
+/tasks/{id}/habits
+Obtener todos los hábitos relacionados con una tarea
+
+Parameters
+Try it out
+Name	Description
+id *
+integer($int64)
+(path)
+id
+Responses
+Code	Description	Links
+200	
+OK
+
+Media type
+
+*/*
+Controls Accept header.
+Example Value
+Schema
+[
+  {
+    "id": 9007199254740991,
+    "name": "string",
+    "creation": "2025-05-04T09:01:40.209Z",
+    "categories": [
+      {
+        "id": 9007199254740991,
+        "name": "string",
+        "description": "string",
+        "creation": "2025-05-04T09:01:40.209Z"
+      }
+    ],
+    "notes": [
+      {
+        "id": 9007199254740991,
+        "title": "string",
+        "note": "string",
+        "creation": "2025-05-04T09:01:40.209Z",
+        "categories": [
+          {
+            "id": 9007199254740991,
+            "name": "string",
+            "description": "string",
+            "creation": "2025-05-04T09:01:40.209Z"
+          }
+        ],
+        "tasks": [
+          {
+            "id": 9007199254740991,
+            "title": "string",
+            "description": "string",
+            "creation": "2025-05-04T09:01:40.209Z",
+            "categories": [
+              {
+                "id": 9007199254740991,
+                "name": "string",
+                "description": "string",
+                "creation": "2025-05-04T09:01:40.209Z"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "tasks": [
+      {
+        "id": 9007199254740991,
+        "title": "string",
+        "description": "string",
+        "creation": "2025-05-04T09:01:40.209Z",
+        "categories": [
+          {
+            "id": 9007199254740991,
+            "name": "string",
+            "description": "string",
+            "creation": "2025-05-04T09:01:40.209Z"
+          }
+        ]
+      }
+    ]
+  }
+]
+No links
+
+GET
+/tasks/{id}/categories
+Obtener todas las categorías de una tarea
+
+Parameters
+Try it out
+Name	Description
+id *
+integer($int64)
+(path)
+id
+Responses
+Code	Description	Links
+200	
+OK
+
+Media type
+
+*/*
+Controls Accept header.
+Example Value
+Schema
+[
+  {
+    "id": 9007199254740991,
+    "name": "string",
+    "description": "string",
+    "creation": "2025-05-04T09:01:40.212Z"
+  }
+]
+No links
+
+PATCH
+/tasks/{id}
+Actualizar parcialmente una tarea existente
+
+Parameters
+Try it out
+Name	Description
+id *
+integer($int64)
+(path)
+ID de la tarea a actualizar
+
+id
+Request body
+
+application/json
+Example Value
+Schema
+{
+  "title": "string",
+  "description": "string",
+  "creation": "2025-05-04T09:01:40.216Z",
+  "categories": [
+    {
+      "name": "string",
+      "description": "string",
+      "creation": "2025-05-04T09:01:40.216Z"
+    }
+  ]
+}
+Responses
+Code	Description	Links
+200	
+Tarea actualizada parcialmente exitosamente
+
+Media type
+
+*/*
+Controls Accept header.
+Example Value
+Schema
+{
+  "id": 9007199254740991,
+  "title": "string",
+  "description": "string",
+  "creation": "2025-05-04T09:01:40.218Z",
+  "categories": [
+    {
+      "id": 9007199254740991,
+      "name": "string",
+      "description": "string",
+      "creation": "2025-05-04T09:01:40.218Z"
+    }
+  ]
+}
+No links
+404	
+Tarea no encontrada
+
+Media type
+
+*/*
+Example Value
+Schema
+{
+  "id": 9007199254740991,
+  "title": "string",
+  "description": "string",
+  "creation": "2025-05-04T09:01:40.219Z",
+  "categories": [
+    {
+      "id": 9007199254740991,
+      "name": "string",
+      "description": "string",
+      "creation": "2025-05-04T09:01:40.219Z"
+    }
+  ]
+}
+No links
+
+POST
+/tasks
+Crear una nueva tarea
+
+Parameters
+Try it out
+No parameters
+
+Request body
+
+application/json
+Example Value
+Schema
+{
+  "title": "string",
+  "description": "string",
+  "creation": "2025-05-04T09:01:40.222Z",
+  "categories": [
+    {
+      "name": "string",
+      "description": "string",
+      "creation": "2025-05-04T09:01:40.222Z"
+    }
+  ]
+}
+Responses
+Code	Description	Links
+201	
+Tarea creada exitosamente
+
+Media type
+
+*/*
+Controls Accept header.
+Example Value
+Schema
+{
+  "id": 9007199254740991,
+  "title": "string",
+  "description": "string",
+  "creation": "2025-05-04T09:01:40.224Z",
+  "categories": [
+    {
+      "id": 9007199254740991,
+      "name": "string",
+      "description": "string",
+      "creation": "2025-05-04T09:01:40.224Z"
+    }
+  ]
+}
+No links
+400	
+Solicitud inválida
+
+Media type
+
+*/*
+Example Value
+Schema
+{
+  "id": 9007199254740991,
+  "title": "string",
+  "description": "string",
+  "creation": "2025-05-04T09:01:40.225Z",
+  "categories": [
+    {
+      "id": 9007199254740991,
+      "name": "string",
+      "description": "string",
+      "creation": "2025-05-04T09:01:40.225Z"
+    }
+  ]
+}
+No links
+
+POST
+/tasks/{taskId}/categories/{categoryId}
+Agregar una categoría a una tarea
+
+Parameters
+Try it out
+Name	Description
+taskId *
+integer($int64)
+(path)
+taskId
+categoryId *
+integer($int64)
+(path)
+categoryId
+Responses
+Code	Description	Links
+200	
+OK
+
+No links
+
+PUT
+/tasks/{id}
+Actualizar una tarea existente (reemplazo completo)
+
+Parameters
+Try it out
+Name	Description
+id *
+integer($int64)
+(path)
+ID de la tarea a actualizar
+
+id
+Request body
+
+application/json
+Example Value
+Schema
+{
+  "title": "string",
+  "description": "string",
+  "creation": "2025-05-04T09:01:40.231Z",
+  "categories": [
+    {
+      "name": "string",
+      "description": "string",
+      "creation": "2025-05-04T09:01:40.231Z"
+    }
+  ]
+}
+Responses
+Code	Description	Links
+200	
+Tarea actualizada exitosamente
+
+Media type
+
+*/*
+Controls Accept header.
+Example Value
+Schema
+{
+  "id": 9007199254740991,
+  "title": "string",
+  "description": "string",
+  "creation": "2025-05-04T09:01:40.233Z",
+  "categories": [
+    {
+      "id": 9007199254740991,
+      "name": "string",
+      "description": "string",
+      "creation": "2025-05-04T09:01:40.233Z"
+    }
+  ]
+}
+No links
+400	
+Solicitud inválida
+
+Media type
+
+*/*
+Example Value
+Schema
+{
+  "id": 9007199254740991,
+  "title": "string",
+  "description": "string",
+  "creation": "2025-05-04T09:01:40.234Z",
+  "categories": [
+    {
+      "id": 9007199254740991,
+      "name": "string",
+      "description": "string",
+      "creation": "2025-05-04T09:01:40.234Z"
+    }
+  ]
+}
+No links
+404	
+Tarea no encontrada
+
+Media type
+
+*/*
+Example Value
+Schema
+{
+  "id": 9007199254740991,
+  "title": "string",
+  "description": "string",
+  "creation": "2025-05-04T09:01:40.236Z",
+  "categories": [
+    {
+      "id": 9007199254740991,
+      "name": "string",
+      "description": "string",
+      "creation": "2025-05-04T09:01:40.236Z"
+    }
+  ]
+}
+No links
+note-controller
+
+
+DELETE
+/notes/{id}
+Eliminar una nota por ID
+
+Parameters
+Try it out
+Name	Description
+id *
+integer($int64)
+(path)
+ID de la nota a eliminar
+
+id
+Responses
+Code	Description	Links
+204	
+Nota eliminada exitosamente
+
+No links
+404	
+Nota no encontrada
+
+No links
+
+DELETE
+/notes/{noteId}/tasks/{taskId}
+Eliminar una tarea de una nota
+
+Parameters
+Try it out
+Name	Description
+noteId *
+integer($int64)
+(path)
+noteId
+taskId *
+integer($int64)
+(path)
+taskId
+Responses
+Code	Description	Links
+200	
+OK
+
+No links
+
+DELETE
+/notes/{noteId}/habits/{habitId}
+Eliminar un hábito de una nota
+
+Parameters
+Try it out
+Name	Description
+noteId *
+integer($int64)
+(path)
+noteId
+habitId *
+integer($int64)
+(path)
+habitId
+Responses
+Code	Description	Links
+200	
+OK
+
+No links
+
+DELETE
+/notes/{noteId}/categories/{categoryId}
+Eliminar una categoría de una nota
+
+Parameters
+Try it out
+Name	Description
+noteId *
+integer($int64)
+(path)
+noteId
+categoryId *
+integer($int64)
+(path)
+categoryId
+Responses
+Code	Description	Links
+200	
+OK
+
+No links
+
+GET
+/notes/{id}
+Obtener una nota por ID
+
+Parameters
+Try it out
+Name	Description
+id *
+integer($int64)
+(path)
+ID de la nota a obtener
+
+id
+Responses
+Code	Description	Links
+200	
+Nota encontrada
+
+Media type
+
+*/*
+Controls Accept header.
+Example Value
+Schema
+{
+  "id": 9007199254740991,
+  "title": "string",
+  "note": "string",
+  "creation": "2025-05-04T09:01:40.249Z",
+  "categories": [
+    {
+      "id": 9007199254740991,
+      "name": "string",
+      "description": "string",
+      "creation": "2025-05-04T09:01:40.249Z"
+    }
+  ],
+  "tasks": [
+    {
+      "id": 9007199254740991,
+      "title": "string",
+      "description": "string",
+      "creation": "2025-05-04T09:01:40.249Z",
+      "categories": [
+        {
+          "id": 9007199254740991,
+          "name": "string",
+          "description": "string",
+          "creation": "2025-05-04T09:01:40.249Z"
+        }
+      ]
+    }
+  ]
+}
+No links
+404	
+Nota no encontrada
+
+Media type
+
+*/*
+Example Value
+Schema
+{
+  "id": 9007199254740991,
+  "title": "string",
+  "note": "string",
+  "creation": "2025-05-04T09:01:40.251Z",
+  "categories": [
+    {
+      "id": 9007199254740991,
+      "name": "string",
+      "description": "string",
+      "creation": "2025-05-04T09:01:40.251Z"
+    }
+  ],
+  "tasks": [
+    {
+      "id": 9007199254740991,
+      "title": "string",
+      "description": "string",
+      "creation": "2025-05-04T09:01:40.251Z",
+      "categories": [
+        {
+          "id": 9007199254740991,
+          "name": "string",
+          "description": "string",
+          "creation": "2025-05-04T09:01:40.251Z"
+        }
+      ]
+    }
+  ]
+}
+No links
+
+GET
+/notes
+Obtener todas las notas
+
+Parameters
+Try it out
+No parameters
+
+Responses
+Code	Description	Links
+200	
+Lista de notas obtenida exitosamente
+
+Media type
+
+*/*
+Controls Accept header.
+Example Value
+Schema
+[
+  {
+    "id": 9007199254740991,
+    "title": "string",
+    "note": "string",
+    "creation": "2025-05-04T09:01:40.254Z",
+    "categories": [
+      {
+        "id": 9007199254740991,
+        "name": "string",
+        "description": "string",
+        "creation": "2025-05-04T09:01:40.254Z"
+      }
+    ],
+    "tasks": [
+      {
+        "id": 9007199254740991,
+        "title": "string",
+        "description": "string",
+        "creation": "2025-05-04T09:01:40.254Z",
+        "categories": [
+          {
+            "id": 9007199254740991,
+            "name": "string",
+            "description": "string",
+            "creation": "2025-05-04T09:01:40.254Z"
+          }
+        ]
+      }
+    ]
+  }
+]
+No links
+
+GET
+/notes/{id}/tasks
+Obtener todas las tareas relacionadas con una nota
+
+Parameters
+Try it out
+Name	Description
+id *
+integer($int64)
+(path)
+id
+Responses
+Code	Description	Links
+200	
+OK
+
+Media type
+
+*/*
+Controls Accept header.
+Example Value
+Schema
+[
+  {
+    "id": 9007199254740991,
+    "title": "string",
+    "description": "string",
+    "creation": "2025-05-04T09:01:40.257Z",
+    "categories": [
+      {
+        "id": 9007199254740991,
+        "name": "string",
+        "description": "string",
+        "creation": "2025-05-04T09:01:40.257Z"
+      }
+    ]
+  }
+]
+No links
+
+GET
+/notes/{id}/history
+Obtener el historial de versiones de una nota
+
+Parameters
+Try it out
+Name	Description
+id *
+integer($int64)
+(path)
+ID de la nota
+
+id
+Responses
+Code	Description	Links
+200	
+OK
+
+Media type
+
+*/*
+Controls Accept header.
+Example Value
+Schema
+[
+  {
+    "historyId": 9007199254740991,
+    "versionId": 9007199254740991,
+    "note": {
+      "id": 9007199254740991,
+      "title": "string",
+      "note": "string",
+      "creation": "2025-05-04T09:01:40.259Z",
+      "categories": [
+        {
+          "id": 9007199254740991,
+          "name": "string",
+          "description": "string",
+          "creation": "2025-05-04T09:01:40.259Z"
+        }
+      ],
+      "tasks": [
+        {
+          "id": 9007199254740991,
+          "title": "string",
+          "description": "string",
+          "creation": "2025-05-04T09:01:40.259Z",
+          "categories": [
+            {
+              "id": 9007199254740991,
+              "name": "string",
+              "description": "string",
+              "creation": "2025-05-04T09:01:40.259Z"
+            }
+          ]
+        }
+      ]
+    },
+    "title": "string",
+    "noteContent": "string",
+    "creation": "2025-05-04T09:01:40.259Z",
+    "timestamp": "2025-05-04T09:01:40.259Z"
+  }
+]
+No links
+
+GET
+/notes/{id}/history/{versionId}
+Obtener una versión específica del historial de una nota
+
+Parameters
+Try it out
+Name	Description
+id *
+integer($int64)
+(path)
+ID de la nota
+
+id
+versionId *
+integer($int64)
+(path)
+ID de la versión del historial
+
+versionId
+Responses
+Code	Description	Links
+200	
+OK
+
+Media type
+
+*/*
+Controls Accept header.
+Example Value
+Schema
+{
+  "historyId": 9007199254740991,
+  "versionId": 9007199254740991,
+  "note": {
+    "id": 9007199254740991,
+    "title": "string",
+    "note": "string",
+    "creation": "2025-05-04T09:01:40.264Z",
+    "categories": [
+      {
+        "id": 9007199254740991,
+        "name": "string",
+        "description": "string",
+        "creation": "2025-05-04T09:01:40.264Z"
+      }
+    ],
+    "tasks": [
+      {
+        "id": 9007199254740991,
+        "title": "string",
+        "description": "string",
+        "creation": "2025-05-04T09:01:40.264Z",
+        "categories": [
+          {
+            "id": 9007199254740991,
+            "name": "string",
+            "description": "string",
+            "creation": "2025-05-04T09:01:40.264Z"
+          }
+        ]
+      }
+    ]
+  },
+  "title": "string",
+  "noteContent": "string",
+  "creation": "2025-05-04T09:01:40.264Z",
+  "timestamp": "2025-05-04T09:01:40.264Z"
+}
+No links
+
+GET
+/notes/{id}/habits
+Obtener todos los hábitos relacionados con una nota
+
+Parameters
+Try it out
+Name	Description
+id *
+integer($int64)
+(path)
+id
+Responses
+Code	Description	Links
+200	
+OK
+
+Media type
+
+*/*
+Controls Accept header.
+Example Value
+Schema
+[
+  {
+    "id": 9007199254740991,
+    "name": "string",
+    "creation": "2025-05-04T09:01:40.268Z",
+    "categories": [
+      {
+        "id": 9007199254740991,
+        "name": "string",
+        "description": "string",
+        "creation": "2025-05-04T09:01:40.268Z"
+      }
+    ],
+    "notes": [
+      {
+        "id": 9007199254740991,
+        "title": "string",
+        "note": "string",
+        "creation": "2025-05-04T09:01:40.268Z",
+        "categories": [
+          {
+            "id": 9007199254740991,
+            "name": "string",
+            "description": "string",
+            "creation": "2025-05-04T09:01:40.268Z"
+          }
+        ],
+        "tasks": [
+          {
+            "id": 9007199254740991,
+            "title": "string",
+            "description": "string",
+            "creation": "2025-05-04T09:01:40.268Z",
+            "categories": [
+              {
+                "id": 9007199254740991,
+                "name": "string",
+                "description": "string",
+                "creation": "2025-05-04T09:01:40.268Z"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "tasks": [
+      {
+        "id": 9007199254740991,
+        "title": "string",
+        "description": "string",
+        "creation": "2025-05-04T09:01:40.268Z",
+        "categories": [
+          {
+            "id": 9007199254740991,
+            "name": "string",
+            "description": "string",
+            "creation": "2025-05-04T09:01:40.268Z"
+          }
+        ]
+      }
+    ]
+  }
+]
+No links
+
+GET
+/notes/{id}/categories
+Obtener todas las categorías de una nota
+
+Parameters
+Try it out
+Name	Description
+id *
+integer($int64)
+(path)
+id
+Responses
+Code	Description	Links
+200	
+OK
+
+Media type
+
+*/*
+Controls Accept header.
+Example Value
+Schema
+[
+  {
+    "id": 9007199254740991,
+    "name": "string",
+    "description": "string",
+    "creation": "2025-05-04T09:01:40.272Z"
+  }
+]
+No links
+
+PATCH
+/notes/{id}
+Actualizar parcialmente una nota existente
+
+Parameters
+Try it out
+Name	Description
+id *
+integer($int64)
+(path)
+ID de la nota a actualizar
+
+id
+Request body
+
+application/json
+Example Value
+Schema
+{
+  "title": "string",
+  "note": "string",
+  "creation": "2025-05-04T09:01:40.274Z",
+  "categories": [
+    {
+      "name": "string",
+      "description": "string",
+      "creation": "2025-05-04T09:01:40.274Z"
+    }
+  ],
+  "tasks": [
+    {
+      "title": "string",
+      "description": "string",
+      "creation": "2025-05-04T09:01:40.274Z",
+      "categories": [
+        {
+          "name": "string",
+          "description": "string",
+          "creation": "2025-05-04T09:01:40.274Z"
+        }
+      ]
+    }
+  ]
+}
+Responses
+Code	Description	Links
+200	
+Nota actualizada parcialmente exitosamente
+
+Media type
+
+*/*
+Controls Accept header.
+Example Value
+Schema
+{
+  "id": 9007199254740991,
+  "title": "string",
+  "note": "string",
+  "creation": "2025-05-04T09:01:40.275Z",
+  "categories": [
+    {
+      "id": 9007199254740991,
+      "name": "string",
+      "description": "string",
+      "creation": "2025-05-04T09:01:40.275Z"
+    }
+  ],
+  "tasks": [
+    {
+      "id": 9007199254740991,
+      "title": "string",
+      "description": "string",
+      "creation": "2025-05-04T09:01:40.275Z",
+      "categories": [
+        {
+          "id": 9007199254740991,
+          "name": "string",
+          "description": "string",
+          "creation": "2025-05-04T09:01:40.275Z"
+        }
+      ]
+    }
+  ]
+}
+No links
+404	
+Nota no encontrada
+
+Media type
+
+*/*
+Example Value
+Schema
+{
+  "id": 9007199254740991,
+  "title": "string",
+  "note": "string",
+  "creation": "2025-05-04T09:01:40.277Z",
+  "categories": [
+    {
+      "id": 9007199254740991,
+      "name": "string",
+      "description": "string",
+      "creation": "2025-05-04T09:01:40.277Z"
+    }
+  ],
+  "tasks": [
+    {
+      "id": 9007199254740991,
+      "title": "string",
+      "description": "string",
+      "creation": "2025-05-04T09:01:40.277Z",
+      "categories": [
+        {
+          "id": 9007199254740991,
+          "name": "string",
+          "description": "string",
+          "creation": "2025-05-04T09:01:40.277Z"
+        }
+      ]
+    }
+  ]
+}
+No links
+
+POST
+/notes
+Crear una nueva nota
+
+Parameters
+Try it out
+No parameters
+
+Request body
+
+application/json
+Example Value
+Schema
+{
+  "title": "string",
+  "note": "string",
+  "creation": "2025-05-04T09:01:40.280Z",
+  "categories": [
+    {
+      "name": "string",
+      "description": "string",
+      "creation": "2025-05-04T09:01:40.280Z"
+    }
+  ],
+  "tasks": [
+    {
+      "title": "string",
+      "description": "string",
+      "creation": "2025-05-04T09:01:40.280Z",
+      "categories": [
+        {
+          "name": "string",
+          "description": "string",
+          "creation": "2025-05-04T09:01:40.280Z"
+        }
+      ]
+    }
+  ]
+}
+Responses
+Code	Description	Links
+201	
+Nota creada exitosamente
+
+Media type
+
+*/*
+Controls Accept header.
+Example Value
+Schema
+{
+  "id": 9007199254740991,
+  "title": "string",
+  "note": "string",
+  "creation": "2025-05-04T09:01:40.281Z",
+  "categories": [
+    {
+      "id": 9007199254740991,
+      "name": "string",
+      "description": "string",
+      "creation": "2025-05-04T09:01:40.281Z"
+    }
+  ],
+  "tasks": [
+    {
+      "id": 9007199254740991,
+      "title": "string",
+      "description": "string",
+      "creation": "2025-05-04T09:01:40.281Z",
+      "categories": [
+        {
+          "id": 9007199254740991,
+          "name": "string",
+          "description": "string",
+          "creation": "2025-05-04T09:01:40.281Z"
+        }
+      ]
+    }
+  ]
+}
+No links
+400	
+Solicitud inválida
+
+Media type
+
+*/*
+Example Value
+Schema
+{
+  "id": 9007199254740991,
+  "title": "string",
+  "note": "string",
+  "creation": "2025-05-04T09:01:40.283Z",
+  "categories": [
+    {
+      "id": 9007199254740991,
+      "name": "string",
+      "description": "string",
+      "creation": "2025-05-04T09:01:40.283Z"
+    }
+  ],
+  "tasks": [
+    {
+      "id": 9007199254740991,
+      "title": "string",
+      "description": "string",
+      "creation": "2025-05-04T09:01:40.283Z",
+      "categories": [
+        {
+          "id": 9007199254740991,
+          "name": "string",
+          "description": "string",
+          "creation": "2025-05-04T09:01:40.283Z"
+        }
+      ]
+    }
+  ]
+}
+No links
+
+POST
+/notes/{noteId}/tasks/{taskId}
+Agregar una tarea a una nota
+
+Parameters
+Try it out
+Name	Description
+noteId *
+integer($int64)
+(path)
+noteId
+taskId *
+integer($int64)
+(path)
+taskId
+Responses
+Code	Description	Links
+200	
+OK
+
+No links
+
+POST
+/notes/{noteId}/habits/{habitId}
+Agregar un hábito a una nota
+
+Parameters
+Try it out
+Name	Description
+noteId *
+integer($int64)
+(path)
+noteId
+habitId *
+integer($int64)
+(path)
+habitId
+Responses
+Code	Description	Links
+200	
+OK
+
+No links
+
+POST
+/notes/{noteId}/categories/{categoryId}
+Agregar una categoría a una nota
+
+Parameters
+Try it out
+Name	Description
+noteId *
+integer($int64)
+(path)
+noteId
+categoryId *
+integer($int64)
+(path)
+categoryId
+Responses
+Code	Description	Links
+200	
+OK
+
+No links
+
+PUT
+/notes/{id}
+Actualizar una nota existente (reemplazo completo)
+
+Parameters
+Try it out
+Name	Description
+id *
+integer($int64)
+(path)
+ID de la nota a actualizar
+
+id
+Request body
+
+application/json
+Example Value
+Schema
+{
+  "title": "string",
+  "note": "string",
+  "creation": "2025-05-04T09:01:40.294Z",
+  "categories": [
+    {
+      "name": "string",
+      "description": "string",
+      "creation": "2025-05-04T09:01:40.294Z"
+    }
+  ],
+  "tasks": [
+    {
+      "title": "string",
+      "description": "string",
+      "creation": "2025-05-04T09:01:40.294Z",
+      "categories": [
+        {
+          "name": "string",
+          "description": "string",
+          "creation": "2025-05-04T09:01:40.294Z"
+        }
+      ]
+    }
+  ]
+}
+Responses
+Code	Description	Links
+200	
+Nota actualizada exitosamente
+
+Media type
+
+*/*
+Controls Accept header.
+Example Value
+Schema
+{
+  "id": 9007199254740991,
+  "title": "string",
+  "note": "string",
+  "creation": "2025-05-04T09:01:40.296Z",
+  "categories": [
+    {
+      "id": 9007199254740991,
+      "name": "string",
+      "description": "string",
+      "creation": "2025-05-04T09:01:40.296Z"
+    }
+  ],
+  "tasks": [
+    {
+      "id": 9007199254740991,
+      "title": "string",
+      "description": "string",
+      "creation": "2025-05-04T09:01:40.296Z",
+      "categories": [
+        {
+          "id": 9007199254740991,
+          "name": "string",
+          "description": "string",
+          "creation": "2025-05-04T09:01:40.296Z"
+        }
+      ]
+    }
+  ]
+}
+No links
+400	
+Solicitud inválida
+
+Media type
+
+*/*
+Example Value
+Schema
+{
+  "id": 9007199254740991,
+  "title": "string",
+  "note": "string",
+  "creation": "2025-05-04T09:01:40.298Z",
+  "categories": [
+    {
+      "id": 9007199254740991,
+      "name": "string",
+      "description": "string",
+      "creation": "2025-05-04T09:01:40.298Z"
+    }
+  ],
+  "tasks": [
+    {
+      "id": 9007199254740991,
+      "title": "string",
+      "description": "string",
+      "creation": "2025-05-04T09:01:40.298Z",
+      "categories": [
+        {
+          "id": 9007199254740991,
+          "name": "string",
+          "description": "string",
+          "creation": "2025-05-04T09:01:40.298Z"
+        }
+      ]
+    }
+  ]
+}
+No links
+404	
+Nota no encontrada
+
+Media type
+
+*/*
+Example Value
+Schema
+{
+  "id": 9007199254740991,
+  "title": "string",
+  "note": "string",
+  "creation": "2025-05-04T09:01:40.300Z",
+  "categories": [
+    {
+      "id": 9007199254740991,
+      "name": "string",
+      "description": "string",
+      "creation": "2025-05-04T09:01:40.300Z"
+    }
+  ],
+  "tasks": [
+    {
+      "id": 9007199254740991,
+      "title": "string",
+      "description": "string",
+      "creation": "2025-05-04T09:01:40.300Z",
+      "categories": [
+        {
+          "id": 9007199254740991,
+          "name": "string",
+          "description": "string",
+          "creation": "2025-05-04T09:01:40.300Z"
+        }
+      ]
+    }
+  ]
+}
+No links
+habit-controller
+
+
+DELETE
+/habits/{id}
+Eliminar un hábito por ID
+
+Parameters
+Try it out
+Name	Description
+id *
+integer($int64)
+(path)
+ID del hábito a eliminar
+
+id
+Responses
+Code	Description	Links
+204	
+Hábito eliminado exitosamente
+
+No links
+404	
+Hábito no encontrado
+
+No links
+
+DELETE
+/habits/{habitId}/tasks/{taskId}
+Eliminar una tarea de un hábito
+
+Parameters
+Try it out
+Name	Description
+habitId *
+integer($int64)
+(path)
+habitId
+taskId *
+integer($int64)
+(path)
+taskId
+Responses
+Code	Description	Links
+200	
+OK
+
+No links
+
+DELETE
+/habits/{habitId}/notes/{noteId}
+Eliminar una nota de un hábito
+
+Parameters
+Try it out
+Name	Description
+habitId *
+integer($int64)
+(path)
+habitId
+noteId *
+integer($int64)
+(path)
+noteId
+Responses
+Code	Description	Links
+200	
+OK
+
+No links
+
+DELETE
+/habits/{habitId}/categories/{categoryId}
+Eliminar una categoría de un hábito
+
+Parameters
+Try it out
+Name	Description
+habitId *
+integer($int64)
+(path)
+habitId
+categoryId *
+integer($int64)
+(path)
+categoryId
+Responses
+Code	Description	Links
+200	
+OK
+
+No links
+
+GET
+/habits/{id}
+Obtener un hábito por ID
+
+Parameters
+Try it out
+Name	Description
+id *
+integer($int64)
+(path)
+ID del hábito a obtener
+
+id
+Responses
+Code	Description	Links
+200	
+Hábito encontrado
+
+Media type
+
+*/*
+Controls Accept header.
+Example Value
+Schema
+{
+  "id": 9007199254740991,
+  "name": "string",
+  "creation": "2025-05-04T09:01:40.315Z",
+  "categories": [
+    {
+      "id": 9007199254740991,
+      "name": "string",
+      "description": "string",
+      "creation": "2025-05-04T09:01:40.315Z"
+    }
+  ],
+  "notes": [
+    {
+      "id": 9007199254740991,
+      "title": "string",
+      "note": "string",
+      "creation": "2025-05-04T09:01:40.315Z",
+      "categories": [
+        {
+          "id": 9007199254740991,
+          "name": "string",
+          "description": "string",
+          "creation": "2025-05-04T09:01:40.315Z"
+        }
+      ],
+      "tasks": [
+        {
+          "id": 9007199254740991,
+          "title": "string",
+          "description": "string",
+          "creation": "2025-05-04T09:01:40.315Z",
+          "categories": [
+            {
+              "id": 9007199254740991,
+              "name": "string",
+              "description": "string",
+              "creation": "2025-05-04T09:01:40.315Z"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "tasks": [
+    {
+      "id": 9007199254740991,
+      "title": "string",
+      "description": "string",
+      "creation": "2025-05-04T09:01:40.315Z",
+      "categories": [
+        {
+          "id": 9007199254740991,
+          "name": "string",
+          "description": "string",
+          "creation": "2025-05-04T09:01:40.315Z"
+        }
+      ]
+    }
+  ]
+}
+No links
+404	
+Hábito no encontrado
+
+Media type
+
+*/*
+Example Value
+Schema
+{
+  "id": 9007199254740991,
+  "name": "string",
+  "creation": "2025-05-04T09:01:40.317Z",
+  "categories": [
+    {
+      "id": 9007199254740991,
+      "name": "string",
+      "description": "string",
+      "creation": "2025-05-04T09:01:40.317Z"
+    }
+  ],
+  "notes": [
+    {
+      "id": 9007199254740991,
+      "title": "string",
+      "note": "string",
+      "creation": "2025-05-04T09:01:40.317Z",
+      "categories": [
+        {
+          "id": 9007199254740991,
+          "name": "string",
+          "description": "string",
+          "creation": "2025-05-04T09:01:40.317Z"
+        }
+      ],
+      "tasks": [
+        {
+          "id": 9007199254740991,
+          "title": "string",
+          "description": "string",
+          "creation": "2025-05-04T09:01:40.317Z",
+          "categories": [
+            {
+              "id": 9007199254740991,
+              "name": "string",
+              "description": "string",
+              "creation": "2025-05-04T09:01:40.317Z"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "tasks": [
+    {
+      "id": 9007199254740991,
+      "title": "string",
+      "description": "string",
+      "creation": "2025-05-04T09:01:40.317Z",
+      "categories": [
+        {
+          "id": 9007199254740991,
+          "name": "string",
+          "description": "string",
+          "creation": "2025-05-04T09:01:40.317Z"
+        }
+      ]
+    }
+  ]
+}
+No links
+
+GET
+/habits
+Obtener todos los hábitos
+
+Parameters
+Try it out
+No parameters
+
+Responses
+Code	Description	Links
+200	
+Lista de hábitos obtenida exitosamente
+
+Media type
+
+*/*
+Controls Accept header.
+Example Value
+Schema
+[
+  {
+    "id": 9007199254740991,
+    "name": "string",
+    "creation": "2025-05-04T09:01:40.321Z",
+    "categories": [
+      {
+        "id": 9007199254740991,
+        "name": "string",
+        "description": "string",
+        "creation": "2025-05-04T09:01:40.321Z"
+      }
+    ],
+    "notes": [
+      {
+        "id": 9007199254740991,
+        "title": "string",
+        "note": "string",
+        "creation": "2025-05-04T09:01:40.321Z",
+        "categories": [
+          {
+            "id": 9007199254740991,
+            "name": "string",
+            "description": "string",
+            "creation": "2025-05-04T09:01:40.321Z"
+          }
+        ],
+        "tasks": [
+          {
+            "id": 9007199254740991,
+            "title": "string",
+            "description": "string",
+            "creation": "2025-05-04T09:01:40.321Z",
+            "categories": [
+              {
+                "id": 9007199254740991,
+                "name": "string",
+                "description": "string",
+                "creation": "2025-05-04T09:01:40.321Z"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "tasks": [
+      {
+        "id": 9007199254740991,
+        "title": "string",
+        "description": "string",
+        "creation": "2025-05-04T09:01:40.321Z",
+        "categories": [
+          {
+            "id": 9007199254740991,
+            "name": "string",
+            "description": "string",
+            "creation": "2025-05-04T09:01:40.321Z"
+          }
+        ]
+      }
+    ]
+  }
+]
+No links
+
+GET
+/habits/{id}/tasks
+Obtener todas las tareas relacionadas con un hábito
+
+Parameters
+Try it out
+Name	Description
+id *
+integer($int64)
+(path)
+id
+Responses
+Code	Description	Links
+200	
+OK
+
+Media type
+
+*/*
+Controls Accept header.
+Example Value
+Schema
+[
+  {
+    "id": 9007199254740991,
+    "title": "string",
+    "description": "string",
+    "creation": "2025-05-04T09:01:40.324Z",
+    "categories": [
+      {
+        "id": 9007199254740991,
+        "name": "string",
+        "description": "string",
+        "creation": "2025-05-04T09:01:40.324Z"
+      }
+    ]
+  }
+]
+No links
+
+GET
+/habits/{id}/notes
+Obtener todas las notas relacionadas con un hábito
+
+Parameters
+Try it out
+Name	Description
+id *
+integer($int64)
+(path)
+id
+Responses
+Code	Description	Links
+200	
+OK
+
+Media type
+
+*/*
+Controls Accept header.
+Example Value
+Schema
+[
+  {
+    "id": 9007199254740991,
+    "title": "string",
+    "note": "string",
+    "creation": "2025-05-04T09:01:40.327Z",
+    "categories": [
+      {
+        "id": 9007199254740991,
+        "name": "string",
+        "description": "string",
+        "creation": "2025-05-04T09:01:40.327Z"
+      }
+    ],
+    "tasks": [
+      {
+        "id": 9007199254740991,
+        "title": "string",
+        "description": "string",
+        "creation": "2025-05-04T09:01:40.327Z",
+        "categories": [
+          {
+            "id": 9007199254740991,
+            "name": "string",
+            "description": "string",
+            "creation": "2025-05-04T09:01:40.327Z"
+          }
+        ]
+      }
+    ]
+  }
+]
+No links
+
+GET
+/habits/{id}/history
+Obtener el historial de versiones de un hábito
+
+Parameters
+Try it out
+Name	Description
+id *
+integer($int64)
+(path)
+ID del hábito
+
+id
+Responses
+Code	Description	Links
+200	
+OK
+
+Media type
+
+*/*
+Controls Accept header.
+Example Value
+Schema
+[
+  {
+    "historyId": 9007199254740991,
+    "versionId": 9007199254740991,
+    "habit": {
+      "id": 9007199254740991,
+      "name": "string",
+      "creation": "2025-05-04T09:01:40.330Z",
+      "categories": [
+        {
+          "id": 9007199254740991,
+          "name": "string",
+          "description": "string",
+          "creation": "2025-05-04T09:01:40.330Z"
+        }
+      ],
+      "notes": [
+        {
+          "id": 9007199254740991,
+          "title": "string",
+          "note": "string",
+          "creation": "2025-05-04T09:01:40.330Z",
+          "categories": [
+            {
+              "id": 9007199254740991,
+              "name": "string",
+              "description": "string",
+              "creation": "2025-05-04T09:01:40.330Z"
+            }
+          ],
+          "tasks": [
+            {
+              "id": 9007199254740991,
+              "title": "string",
+              "description": "string",
+              "creation": "2025-05-04T09:01:40.330Z",
+              "categories": [
+                {
+                  "id": 9007199254740991,
+                  "name": "string",
+                  "description": "string",
+                  "creation": "2025-05-04T09:01:40.330Z"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "tasks": [
+        {
+          "id": 9007199254740991,
+          "title": "string",
+          "description": "string",
+          "creation": "2025-05-04T09:01:40.330Z",
+          "categories": [
+            {
+              "id": 9007199254740991,
+              "name": "string",
+              "description": "string",
+              "creation": "2025-05-04T09:01:40.330Z"
+            }
+          ]
+        }
+      ]
+    },
+    "name": "string",
+    "creation": "2025-05-04T09:01:40.330Z",
+    "timestamp": "2025-05-04T09:01:40.330Z"
+  }
+]
+No links
+
+GET
+/habits/{id}/history/{versionId}
+Obtener una versión específica del historial de un hábito
+
+Parameters
+Try it out
+Name	Description
+id *
+integer($int64)
+(path)
+ID del hábito
+
+id
+versionId *
+integer($int64)
+(path)
+ID de la versión del historial
+
+versionId
+Responses
+Code	Description	Links
+200	
+OK
+
+Media type
+
+*/*
+Controls Accept header.
+Example Value
+Schema
+{
+  "historyId": 9007199254740991,
+  "versionId": 9007199254740991,
+  "habit": {
+    "id": 9007199254740991,
+    "name": "string",
+    "creation": "2025-05-04T09:01:40.337Z",
+    "categories": [
+      {
+        "id": 9007199254740991,
+        "name": "string",
+        "description": "string",
+        "creation": "2025-05-04T09:01:40.337Z"
+      }
+    ],
+    "notes": [
+      {
+        "id": 9007199254740991,
+        "title": "string",
+        "note": "string",
+        "creation": "2025-05-04T09:01:40.337Z",
+        "categories": [
+          {
+            "id": 9007199254740991,
+            "name": "string",
+            "description": "string",
+            "creation": "2025-05-04T09:01:40.337Z"
+          }
+        ],
+        "tasks": [
+          {
+            "id": 9007199254740991,
+            "title": "string",
+            "description": "string",
+            "creation": "2025-05-04T09:01:40.337Z",
+            "categories": [
+              {
+                "id": 9007199254740991,
+                "name": "string",
+                "description": "string",
+                "creation": "2025-05-04T09:01:40.337Z"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "tasks": [
+      {
+        "id": 9007199254740991,
+        "title": "string",
+        "description": "string",
+        "creation": "2025-05-04T09:01:40.337Z",
+        "categories": [
+          {
+            "id": 9007199254740991,
+            "name": "string",
+            "description": "string",
+            "creation": "2025-05-04T09:01:40.337Z"
+          }
+        ]
+      }
+    ]
+  },
+  "name": "string",
+  "creation": "2025-05-04T09:01:40.337Z",
+  "timestamp": "2025-05-04T09:01:40.337Z"
+}
+No links
+
+GET
+/habits/{id}/categories
+Obtener todas las categorías de un hábito
+
+Parameters
+Try it out
+Name	Description
+id *
+integer($int64)
+(path)
+id
+Responses
+Code	Description	Links
+200	
+OK
+
+Media type
+
+*/*
+Controls Accept header.
+Example Value
+Schema
+[
+  {
+    "id": 9007199254740991,
+    "name": "string",
+    "description": "string",
+    "creation": "2025-05-04T09:01:40.343Z"
+  }
+]
+No links
+
+PATCH
+/habits/{id}
+Actualizar parcialmente un hábito existente
+
+Parameters
+Try it out
+Name	Description
+id *
+integer($int64)
+(path)
+ID del hábito a actualizar
+
+id
+Request body
+
+application/json
+Example Value
+Schema
+{
+  "name": "string",
+  "creation": "2025-05-04T09:01:40.347Z",
+  "categories": [
+    {
+      "name": "string",
+      "description": "string",
+      "creation": "2025-05-04T09:01:40.347Z"
+    }
+  ],
+  "notes": [
+    {
+      "title": "string",
+      "note": "string",
+      "creation": "2025-05-04T09:01:40.347Z",
+      "categories": [
+        {
+          "name": "string",
+          "description": "string",
+          "creation": "2025-05-04T09:01:40.347Z"
+        }
+      ],
+      "tasks": [
+        {
+          "title": "string",
+          "description": "string",
+          "creation": "2025-05-04T09:01:40.347Z",
+          "categories": [
+            {
+              "name": "string",
+              "description": "string",
+              "creation": "2025-05-04T09:01:40.347Z"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "tasks": [
+    {
+      "title": "string",
+      "description": "string",
+      "creation": "2025-05-04T09:01:40.347Z",
+      "categories": [
+        {
+          "name": "string",
+          "description": "string",
+          "creation": "2025-05-04T09:01:40.347Z"
+        }
+      ]
+    }
+  ]
+}
+Responses
+Code	Description	Links
+200	
+Hábito actualizado parcialmente exitosamente
+
+Media type
+
+*/*
+Controls Accept header.
+Example Value
+Schema
+{
+  "id": 9007199254740991,
+  "name": "string",
+  "creation": "2025-05-04T09:01:40.349Z",
+  "categories": [
+    {
+      "id": 9007199254740991,
+      "name": "string",
+      "description": "string",
+      "creation": "2025-05-04T09:01:40.349Z"
+    }
+  ],
+  "notes": [
+    {
+      "id": 9007199254740991,
+      "title": "string",
+      "note": "string",
+      "creation": "2025-05-04T09:01:40.349Z",
+      "categories": [
+        {
+          "id": 9007199254740991,
+          "name": "string",
+          "description": "string",
+          "creation": "2025-05-04T09:01:40.349Z"
+        }
+      ],
+      "tasks": [
+        {
+          "id": 9007199254740991,
+          "title": "string",
+          "description": "string",
+          "creation": "2025-05-04T09:01:40.349Z",
+          "categories": [
+            {
+              "id": 9007199254740991,
+              "name": "string",
+              "description": "string",
+              "creation": "2025-05-04T09:01:40.349Z"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "tasks": [
+    {
+      "id": 9007199254740991,
+      "title": "string",
+      "description": "string",
+      "creation": "2025-05-04T09:01:40.349Z",
+      "categories": [
+        {
+          "id": 9007199254740991,
+          "name": "string",
+          "description": "string",
+          "creation": "2025-05-04T09:01:40.349Z"
+        }
+      ]
+    }
+  ]
+}
+No links
+404	
+Hábito no encontrado
+
+Media type
+
+*/*
+Example Value
+Schema
+{
+  "id": 9007199254740991,
+  "name": "string",
+  "creation": "2025-05-04T09:01:40.352Z",
+  "categories": [
+    {
+      "id": 9007199254740991,
+      "name": "string",
+      "description": "string",
+      "creation": "2025-05-04T09:01:40.352Z"
+    }
+  ],
+  "notes": [
+    {
+      "id": 9007199254740991,
+      "title": "string",
+      "note": "string",
+      "creation": "2025-05-04T09:01:40.352Z",
+      "categories": [
+        {
+          "id": 9007199254740991,
+          "name": "string",
+          "description": "string",
+          "creation": "2025-05-04T09:01:40.352Z"
+        }
+      ],
+      "tasks": [
+        {
+          "id": 9007199254740991,
+          "title": "string",
+          "description": "string",
+          "creation": "2025-05-04T09:01:40.352Z",
+          "categories": [
+            {
+              "id": 9007199254740991,
+              "name": "string",
+              "description": "string",
+              "creation": "2025-05-04T09:01:40.352Z"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "tasks": [
+    {
+      "id": 9007199254740991,
+      "title": "string",
+      "description": "string",
+      "creation": "2025-05-04T09:01:40.352Z",
+      "categories": [
+        {
+          "id": 9007199254740991,
+          "name": "string",
+          "description": "string",
+          "creation": "2025-05-04T09:01:40.352Z"
+        }
+      ]
+    }
+  ]
+}
+No links
+
+POST
+/habits
+Crear un nuevo hábito
+
+Parameters
+Try it out
+No parameters
+
+Request body
+
+application/json
+Example Value
+Schema
+{
+  "name": "string",
+  "creation": "2025-05-04T09:01:40.357Z",
+  "categories": [
+    {
+      "name": "string",
+      "description": "string",
+      "creation": "2025-05-04T09:01:40.357Z"
+    }
+  ],
+  "notes": [
+    {
+      "title": "string",
+      "note": "string",
+      "creation": "2025-05-04T09:01:40.357Z",
+      "categories": [
+        {
+          "name": "string",
+          "description": "string",
+          "creation": "2025-05-04T09:01:40.357Z"
+        }
+      ],
+      "tasks": [
+        {
+          "title": "string",
+          "description": "string",
+          "creation": "2025-05-04T09:01:40.357Z",
+          "categories": [
+            {
+              "name": "string",
+              "description": "string",
+              "creation": "2025-05-04T09:01:40.357Z"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "tasks": [
+    {
+      "title": "string",
+      "description": "string",
+      "creation": "2025-05-04T09:01:40.357Z",
+      "categories": [
+        {
+          "name": "string",
+          "description": "string",
+          "creation": "2025-05-04T09:01:40.357Z"
+        }
+      ]
+    }
+  ]
+}
+Responses
+Code	Description	Links
+201	
+Hábito creado exitosamente
+
+Media type
+
+*/*
+Controls Accept header.
+Example Value
+Schema
+{
+  "id": 9007199254740991,
+  "name": "string",
+  "creation": "2025-05-04T09:01:40.359Z",
+  "categories": [
+    {
+      "id": 9007199254740991,
+      "name": "string",
+      "description": "string",
+      "creation": "2025-05-04T09:01:40.359Z"
+    }
+  ],
+  "notes": [
+    {
+      "id": 9007199254740991,
+      "title": "string",
+      "note": "string",
+      "creation": "2025-05-04T09:01:40.359Z",
+      "categories": [
+        {
+          "id": 9007199254740991,
+          "name": "string",
+          "description": "string",
+          "creation": "2025-05-04T09:01:40.359Z"
+        }
+      ],
+      "tasks": [
+        {
+          "id": 9007199254740991,
+          "title": "string",
+          "description": "string",
+          "creation": "2025-05-04T09:01:40.359Z",
+          "categories": [
+            {
+              "id": 9007199254740991,
+              "name": "string",
+              "description": "string",
+              "creation": "2025-05-04T09:01:40.359Z"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "tasks": [
+    {
+      "id": 9007199254740991,
+      "title": "string",
+      "description": "string",
+      "creation": "2025-05-04T09:01:40.359Z",
+      "categories": [
+        {
+          "id": 9007199254740991,
+          "name": "string",
+          "description": "string",
+          "creation": "2025-05-04T09:01:40.359Z"
+        }
+      ]
+    }
+  ]
+}
+No links
+400	
+Solicitud inválida
+
+Media type
+
+*/*
+Example Value
+Schema
+{
+  "id": 9007199254740991,
+  "name": "string",
+  "creation": "2025-05-04T09:01:40.362Z",
+  "categories": [
+    {
+      "id": 9007199254740991,
+      "name": "string",
+      "description": "string",
+      "creation": "2025-05-04T09:01:40.362Z"
+    }
+  ],
+  "notes": [
+    {
+      "id": 9007199254740991,
+      "title": "string",
+      "note": "string",
+      "creation": "2025-05-04T09:01:40.362Z",
+      "categories": [
+        {
+          "id": 9007199254740991,
+          "name": "string",
+          "description": "string",
+          "creation": "2025-05-04T09:01:40.362Z"
+        }
+      ],
+      "tasks": [
+        {
+          "id": 9007199254740991,
+          "title": "string",
+          "description": "string",
+          "creation": "2025-05-04T09:01:40.362Z",
+          "categories": [
+            {
+              "id": 9007199254740991,
+              "name": "string",
+              "description": "string",
+              "creation": "2025-05-04T09:01:40.362Z"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "tasks": [
+    {
+      "id": 9007199254740991,
+      "title": "string",
+      "description": "string",
+      "creation": "2025-05-04T09:01:40.362Z",
+      "categories": [
+        {
+          "id": 9007199254740991,
+          "name": "string",
+          "description": "string",
+          "creation": "2025-05-04T09:01:40.362Z"
+        }
+      ]
+    }
+  ]
+}
+No links
+
+POST
+/habits/{habitId}/tasks/{taskId}
+Agregar una tarea a un hábito
+
+
+POST
+/habits/{habitId}/notes/{noteId}
+Agregar una nota a un hábito
+
+Parameters
+Try it out
+Name	Description
+habitId *
+integer($int64)
+(path)
+habitId
+noteId *
+integer($int64)
+(path)
+noteId
+Responses
+Code	Description	Links
+200	
+OK
+
+No links
+
+POST
+/habits/{habitId}/categories/{categoryId}
+Agregar una categoría a un hábito
+
+Parameters
+Try it out
+Name	Description
+habitId *
+integer($int64)
+(path)
+habitId
+categoryId *
+integer($int64)
+(path)
+categoryId
+Responses
+Code	Description	Links
+200	
+OK
+
+No links
+
+PUT
+/habits/{id}
+Actualizar un hábito existente (reemplazo completo)
+
+Parameters
+Try it out
+Name	Description
+id *
+integer($int64)
+(path)
+ID del hábito a actualizar
+
+id
+Request body
+
+application/json
+Example Value
+Schema
+{
+  "name": "string",
+  "creation": "2025-05-04T09:01:40.374Z",
+  "categories": [
+    {
+      "name": "string",
+      "description": "string",
+      "creation": "2025-05-04T09:01:40.374Z"
+    }
+  ],
+  "notes": [
+    {
+      "title": "string",
+      "note": "string",
+      "creation": "2025-05-04T09:01:40.374Z",
+      "categories": [
+        {
+          "name": "string",
+          "description": "string",
+          "creation": "2025-05-04T09:01:40.374Z"
+        }
+      ],
+      "tasks": [
+        {
+          "title": "string",
+          "description": "string",
+          "creation": "2025-05-04T09:01:40.374Z",
+          "categories": [
+            {
+              "name": "string",
+              "description": "string",
+              "creation": "2025-05-04T09:01:40.374Z"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "tasks": [
+    {
+      "title": "string",
+      "description": "string",
+      "creation": "2025-05-04T09:01:40.374Z",
+      "categories": [
+        {
+          "name": "string",
+          "description": "string",
+          "creation": "2025-05-04T09:01:40.374Z"
+        }
+      ]
+    }
+  ]
+}
+Responses
+Code	Description	Links
+200	
+Hábito actualizado exitosamente
+
+Media type
+
+*/*
+Controls Accept header.
+Example Value
+Schema
+{
+  "id": 9007199254740991,
+  "name": "string",
+  "creation": "2025-05-04T09:01:40.376Z",
+  "categories": [
+    {
+      "id": 9007199254740991,
+      "name": "string",
+      "description": "string",
+      "creation": "2025-05-04T09:01:40.376Z"
+    }
+  ],
+  "notes": [
+    {
+      "id": 9007199254740991,
+      "title": "string",
+      "note": "string",
+      "creation": "2025-05-04T09:01:40.376Z",
+      "categories": [
+        {
+          "id": 9007199254740991,
+          "name": "string",
+          "description": "string",
+          "creation": "2025-05-04T09:01:40.376Z"
+        }
+      ],
+      "tasks": [
+        {
+          "id": 9007199254740991,
+          "title": "string",
+          "description": "string",
+          "creation": "2025-05-04T09:01:40.376Z",
+          "categories": [
+            {
+              "id": 9007199254740991,
+              "name": "string",
+              "description": "string",
+              "creation": "2025-05-04T09:01:40.376Z"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "tasks": [
+    {
+      "id": 9007199254740991,
+      "title": "string",
+      "description": "string",
+      "creation": "2025-05-04T09:01:40.376Z",
+      "categories": [
+        {
+          "id": 9007199254740991,
+          "name": "string",
+          "description": "string",
+          "creation": "2025-05-04T09:01:40.376Z"
+        }
+      ]
+    }
+  ]
+}
+No links
+400	
+Solicitud inválida
+
+Media type
+
+*/*
+Example Value
+Schema
+{
+  "id": 9007199254740991,
+  "name": "string",
+  "creation": "2025-05-04T09:01:40.378Z",
+  "categories": [
+    {
+      "id": 9007199254740991,
+      "name": "string",
+      "description": "string",
+      "creation": "2025-05-04T09:01:40.378Z"
+    }
+  ],
+  "notes": [
+    {
+      "id": 9007199254740991,
+      "title": "string",
+      "note": "string",
+      "creation": "2025-05-04T09:01:40.378Z",
+      "categories": [
+        {
+          "id": 9007199254740991,
+          "name": "string",
+          "description": "string",
+          "creation": "2025-05-04T09:01:40.378Z"
+        }
+      ],
+      "tasks": [
+        {
+          "id": 9007199254740991,
+          "title": "string",
+          "description": "string",
+          "creation": "2025-05-04T09:01:40.378Z",
+          "categories": [
+            {
+              "id": 9007199254740991,
+              "name": "string",
+              "description": "string",
+              "creation": "2025-05-04T09:01:40.378Z"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "tasks": [
+    {
+      "id": 9007199254740991,
+      "title": "string",
+      "description": "string",
+      "creation": "2025-05-04T09:01:40.378Z",
+      "categories": [
+        {
+          "id": 9007199254740991,
+          "name": "string",
+          "description": "string",
+          "creation": "2025-05-04T09:01:40.378Z"
+        }
+      ]
+    }
+  ]
+}
+No links
+404	
+Hábito no encontrado
+
+Media type
+
+*/*
+Example Value
+Schema
+{
+  "id": 9007199254740991,
+  "name": "string",
+  "creation": "2025-05-04T09:01:40.380Z",
+  "categories": [
+    {
+      "id": 9007199254740991,
+      "name": "string",
+      "description": "string",
+      "creation": "2025-05-04T09:01:40.380Z"
+    }
+  ],
+  "notes": [
+    {
+      "id": 9007199254740991,
+      "title": "string",
+      "note": "string",
+      "creation": "2025-05-04T09:01:40.380Z",
+      "categories": [
+        {
+          "id": 9007199254740991,
+          "name": "string",
+          "description": "string",
+          "creation": "2025-05-04T09:01:40.380Z"
+        }
+      ],
+      "tasks": [
+        {
+          "id": 9007199254740991,
+          "title": "string",
+          "description": "string",
+          "creation": "2025-05-04T09:01:40.380Z",
+          "categories": [
+            {
+              "id": 9007199254740991,
+              "name": "string",
+              "description": "string",
+              "creation": "2025-05-04T09:01:40.380Z"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "tasks": [
+    {
+      "id": 9007199254740991,
+      "title": "string",
+      "description": "string",
+      "creation": "2025-05-04T09:01:40.380Z",
+      "categories": [
+        {
+          "id": 9007199254740991,
+          "name": "string",
+          "description": "string",
+          "creation": "2025-05-04T09:01:40.380Z"
+        }
+      ]
+    }
+  ]
+}
+No links
+category-controller
+
+
+DELETE
+/categories/{id}
+Eliminar una categoría por ID
+
+Parameters
+Try it out
+Name	Description
+id *
+integer($int64)
+(path)
+ID de la categoría a eliminar
+
+id
+Responses
+Code	Description	Links
+204	
+Categoría eliminada exitosamente
+
+No links
+404	
+Categoría no encontrada
+
+No links
+
+DELETE
+/categories/{categoryId}/tasks/{taskId}
+Eliminar una tarea de una categoría
+
+Parameters
+Try it out
+Name	Description
+categoryId *
+integer($int64)
+(path)
+categoryId
+taskId *
+integer($int64)
+(path)
+taskId
+Responses
+Code	Description	Links
+200	
+OK
+
+No links
+
+DELETE
+/categories/{categoryId}/notes/{noteId}
+Eliminar una nota de una categoría
+
+Parameters
+Try it out
+Name	Description
+categoryId *
+integer($int64)
+(path)
+categoryId
+noteId *
+integer($int64)
+(path)
+noteId
+Responses
+Code	Description	Links
+200	
+OK
+
+No links
+
+DELETE
+/categories/{categoryId}/habits/{habitId}
+Eliminar un hábito de una categoría
+
+Parameters
+Try it out
+Name	Description
+categoryId *
+integer($int64)
+(path)
+categoryId
+habitId *
+integer($int64)
+(path)
+habitId
+Responses
+Code	Description	Links
+200	
+OK
+
+No links
+
+GET
+/categories/{id}
+Obtener una categoría por ID
+
+Parameters
+Try it out
+Name	Description
+id *
+integer($int64)
+(path)
+ID de la categoría a obtener
+
+id
+Responses
+Code	Description	Links
+200	
+Categoría encontrada
+
+Media type
+
+*/*
+Controls Accept header.
+Example Value
+Schema
+{
+  "id": 9007199254740991,
+  "name": "string",
+  "description": "string",
+  "creation": "2025-05-04T09:01:40.390Z"
+}
+No links
+404	
+Categoría no encontrada
+
+Media type
+
+*/*
+Example Value
+Schema
+{
+  "id": 9007199254740991,
+  "name": "string",
+  "description": "string",
+  "creation": "2025-05-04T09:01:40.391Z"
+}
+No links
+
+GET
+/categories
+Obtener todas las categorías
+
+Parameters
+Try it out
+No parameters
+
+Responses
+Code	Description	Links
+200	
+Lista de categorías obtenida exitosamente
+
+Media type
+
+*/*
+Controls Accept header.
+Example Value
+Schema
+[
+  {
+    "id": 9007199254740991,
+    "name": "string",
+    "description": "string",
+    "creation": "2025-05-04T09:01:40.393Z"
+  }
+]
+No links
+
+GET
+/categories/{id}/tasks
+Obtener todas las tareas de una categoría
+
+Parameters
+Try it out
+Name	Description
+id *
+integer($int64)
+(path)
+id
+Responses
+Code	Description	Links
+200	
+OK
+
+Media type
+
+*/*
+Controls Accept header.
+Example Value
+Schema
+[
+  {
+    "id": 9007199254740991,
+    "title": "string",
+    "description": "string",
+    "creation": "2025-05-04T09:01:40.398Z",
+    "categories": [
+      {
+        "id": 9007199254740991,
+        "name": "string",
+        "description": "string",
+        "creation": "2025-05-04T09:01:40.398Z"
+      }
+    ]
+  }
+]
+No links
+
+GET
+/categories/{id}/notes
+Obtener todas las notas de una categoría
+
+Parameters
+Try it out
+Name	Description
+id *
+integer($int64)
+(path)
+id
+Responses
+Code	Description	Links
+200	
+OK
+
+Media type
+
+*/*
+Controls Accept header.
+Example Value
+Schema
+[
+  {
+    "id": 9007199254740991,
+    "title": "string",
+    "note": "string",
+    "creation": "2025-05-04T09:01:40.401Z",
+    "categories": [
+      {
+        "id": 9007199254740991,
+        "name": "string",
+        "description": "string",
+        "creation": "2025-05-04T09:01:40.401Z"
+      }
+    ],
+    "tasks": [
+      {
+        "id": 9007199254740991,
+        "title": "string",
+        "description": "string",
+        "creation": "2025-05-04T09:01:40.401Z",
+        "categories": [
+          {
+            "id": 9007199254740991,
+            "name": "string",
+            "description": "string",
+            "creation": "2025-05-04T09:01:40.401Z"
+          }
+        ]
+      }
+    ]
+  }
+]
+No links
+
+GET
+/categories/{id}/history
+Obtener el historial de versiones de una categoría
+
+Parameters
+Try it out
+Name	Description
+id *
+integer($int64)
+(path)
+ID de la categoría
+
+id
+Responses
+Code	Description	Links
+200	
+OK
+
+Media type
+
+*/*
+Controls Accept header.
+Example Value
+Schema
+[
+  {
+    "historyId": 9007199254740991,
+    "versionId": 9007199254740991,
+    "category": {
+      "id": 9007199254740991,
+      "name": "string",
+      "description": "string",
+      "creation": "2025-05-04T09:01:40.404Z"
+    },
+    "name": "string",
+    "description": "string",
+    "creation": "2025-05-04T09:01:40.404Z",
+    "timestamp": "2025-05-04T09:01:40.404Z"
+  }
+]
+No links
+
+GET
+/categories/{id}/history/{versionId}
+Obtener una versión específica del historial de una categoría
+
+Parameters
+Try it out
+Name	Description
+id *
+integer($int64)
+(path)
+ID de la categoría
+
+id
+versionId *
+integer($int64)
+(path)
+ID de la versión del historial
+
+versionId
+Responses
+Code	Description	Links
+200	
+OK
+
+Media type
+
+*/*
+Controls Accept header.
+Example Value
+Schema
+{
+  "historyId": 9007199254740991,
+  "versionId": 9007199254740991,
+  "category": {
+    "id": 9007199254740991,
+    "name": "string",
+    "description": "string",
+    "creation": "2025-05-04T09:01:40.407Z"
+  },
+  "name": "string",
+  "description": "string",
+  "creation": "2025-05-04T09:01:40.407Z",
+  "timestamp": "2025-05-04T09:01:40.407Z"
+}
+No links
+
+GET
+/categories/{id}/habits
+Obtener todos los hábitos de una categoría
+
+Parameters
+Try it out
+Name	Description
+id *
+integer($int64)
+(path)
+id
+Responses
+Code	Description	Links
+200	
+OK
+
+Media type
+
+*/*
+Controls Accept header.
+Example Value
+Schema
+[
+  {
+    "id": 9007199254740991,
+    "name": "string",
+    "creation": "2025-05-04T09:01:40.409Z",
+    "categories": [
+      {
+        "id": 9007199254740991,
+        "name": "string",
+        "description": "string",
+        "creation": "2025-05-04T09:01:40.409Z"
+      }
+    ],
+    "notes": [
+      {
+        "id": 9007199254740991,
+        "title": "string",
+        "note": "string",
+        "creation": "2025-05-04T09:01:40.409Z",
+        "categories": [
+          {
+            "id": 9007199254740991,
+            "name": "string",
+            "description": "string",
+            "creation": "2025-05-04T09:01:40.409Z"
+          }
+        ],
+        "tasks": [
+          {
+            "id": 9007199254740991,
+            "title": "string",
+            "description": "string",
+            "creation": "2025-05-04T09:01:40.409Z",
+            "categories": [
+              {
+                "id": 9007199254740991,
+                "name": "string",
+                "description": "string",
+                "creation": "2025-05-04T09:01:40.409Z"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "tasks": [
+      {
+        "id": 9007199254740991,
+        "title": "string",
+        "description": "string",
+        "creation": "2025-05-04T09:01:40.409Z",
+        "categories": [
+          {
+            "id": 9007199254740991,
+            "name": "string",
+            "description": "string",
+            "creation": "2025-05-04T09:01:40.409Z"
+          }
+        ]
+      }
+    ]
+  }
+]
+No links
+
+GET
+/categories/search/by-name
+Buscar categorías por nombre (parcial)
+
+
+PATCH
+/categories/{id}
+Actualizar parcialmente una categoría existente
+
+Parameters
+Try it out
+Name	Description
+id *
+integer($int64)
+(path)
+ID de la categoría a actualizar
+
+id
+Request body
+
+application/json
+Example Value
+Schema
+{
+  "name": "string",
+  "description": "string",
+  "creation": "2025-05-04T09:01:40.416Z"
+}
+Responses
+Code	Description	Links
+200	
+Categoría actualizada parcialmente exitosamente
+
+Media type
+
+*/*
+Controls Accept header.
+Example Value
+Schema
+{
+  "id": 9007199254740991,
+  "name": "string",
+  "description": "string",
+  "creation": "2025-05-04T09:01:40.417Z"
+}
+No links
+404	
+Categoría no encontrada
+
+Media type
+
+*/*
+Example Value
+Schema
+{
+  "id": 9007199254740991,
+  "name": "string",
+  "description": "string",
+  "creation": "2025-05-04T09:01:40.418Z"
+}
+No links
+
+POST
+/categories
+Crear una nueva categoría
+
+Parameters
+Try it out
+No parameters
+
+Request body
+
+application/json
+Example Value
+Schema
+{
+  "name": "string",
+  "description": "string",
+  "creation": "2025-05-04T09:01:40.420Z"
+}
+Responses
+Code	Description	Links
+201	
+Categoría creada exitosamente
+
+Media type
+
+*/*
+Controls Accept header.
+Example Value
+Schema
+{
+  "id": 9007199254740991,
+  "name": "string",
+  "description": "string",
+  "creation": "2025-05-04T09:01:40.421Z"
+}
+No links
+400	
+Solicitud inválida
+
+Media type
+
+*/*
+Example Value
+Schema
+{
+  "id": 9007199254740991,
+  "name": "string",
+  "description": "string",
+  "creation": "2025-05-04T09:01:40.422Z"
+}
+No links
+
+POST
+/categories/{categoryId}/tasks/{taskId}
+Agregar una tarea a una categoría
+
+Parameters
+Try it out
+Name	Description
+categoryId *
+integer($int64)
+(path)
+categoryId
+taskId *
+integer($int64)
+(path)
+taskId
+Responses
+Code	Description	Links
+200	
+OK
+
+No links
+
+POST
+/categories/{categoryId}/notes/{noteId}
+Agregar una nota a una categoría
+
+Parameters
+Try it out
+Name	Description
+categoryId *
+integer($int64)
+(path)
+categoryId
+noteId *
+integer($int64)
+(path)
+noteId
+Responses
+Code	Description	Links
+200	
+OK
+
+No links
+
+POST
+/categories/{categoryId}/habits/{habitId}
+Agregar un hábito a una categoría
+
+Parameters
+Try it out
+Name	Description
+categoryId *
+integer($int64)
+(path)
+categoryId
+habitId *
+integer($int64)
+(path)
+habitId
+Responses
+Code	Description	Links
+200	
+OK
+
+No links
+
+PUT
+/categories/{id}
+Actualizar una categoría existente (reemplazo completo)
+
+Parameters
+Try it out
+Name	Description
+id *
+integer($int64)
+(path)
+ID de la categoría a actualizar
+
+id
+Request body
+
+application/json
+Example Value
+Schema
+{
+  "name": "string",
+  "description": "string",
+  "creation": "2025-05-04T09:01:40.432Z"
+}
+Responses
+Code	Description	Links
+200	
+Categoría actualizada exitosamente
+
+Media type
+
+*/*
+Controls Accept header.
+Example Value
+Schema
+{
+  "id": 9007199254740991,
+  "name": "string",
+  "description": "string",
+  "creation": "2025-05-04T09:01:40.434Z"
+}
+No links
+400	
+Solicitud inválida
+
+Media type
+
+*/*
+Example Value
+Schema
+{
+  "id": 9007199254740991,
+  "name": "string",
+  "description": "string",
+  "creation": "2025-05-04T09:01:40.435Z"
+}
+No links
+404	
+Categoría no encontrada
+
+Media type
+
+*/*
+Example Value
+Schema
+{
+  "id": 9007199254740991,
+  "name": "string",
+  "description": "string",
+  "creation": "2025-05-04T09:01:40.436Z"
+}
+No links
+dashboard-controller
+
+
+GET
+/dashboard-stats
+Obtener estadísticas del dashboard
+
+Parameters
+Try it out
+No parameters
+
+Responses
+Code	Description	Links
+200	
+Estadísticas del dashboard obtenidas exitosamente
+
+Media type
+
+*/*
+Controls Accept header.
+Example Value
+Schema
+{
+  "additionalProp1": {},
+  "additionalProp2": {},
+  "additionalProp3": {}
+}
+No links
+
+Schemas
+CategoryExpand allobject
+TaskExpand allobject
+NoteExpand allobject
+HabitExpand allobject
+TaskHistoryExpand allobject
+NoteHistoryExpand allobject
+HabitHistoryExpand allobject
+CategoryHistoryExpand allobject
