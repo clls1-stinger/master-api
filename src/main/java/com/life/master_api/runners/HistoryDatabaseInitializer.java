@@ -42,6 +42,11 @@ public class HistoryDatabaseInitializer implements CommandLineRunner {
     @Transactional
     @Override
     public void run(String... args) throws Exception {
+        // Deshabilitado: No inicializar historiales automáticamente
+        System.out.println("HistoryDatabaseInitializer deshabilitado. Los historiales se crearán por usuario.");
+        return;
+        
+        /*
         System.out.println("Initializing History Tables...");
 
         initializeCategoryHistory();
@@ -50,6 +55,7 @@ public class HistoryDatabaseInitializer implements CommandLineRunner {
         initializeHabitHistory();
 
         System.out.println("History Tables Initialized.");
+        */
     }
 
     private void initializeCategoryHistory() {

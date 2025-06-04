@@ -11,7 +11,7 @@ import lombok.EqualsAndHashCode;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.List; // Import List
+import java.util.List;
 
 @Entity
 @Table(name = "Categories")
@@ -51,5 +51,10 @@ public class Category {
 
     @OneToMany(mappedBy = "category", cascade = CascadeType.ALL, orphanRemoval = false, fetch = FetchType.LAZY)
     @JsonIgnore // Prevent infinite recursion during serialization
-    private List<CategoryHistory> history; // Add the history relationship
+    private List<CategoryHistory> history;
+    
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    @JsonIgnore
+    private User user;
 }

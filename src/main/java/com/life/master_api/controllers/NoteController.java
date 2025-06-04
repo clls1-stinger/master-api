@@ -5,15 +5,22 @@ import com.life.master_api.entities.Habit;
 import com.life.master_api.entities.Note;
 import com.life.master_api.entities.NoteHistory;
 import com.life.master_api.entities.Task;
+import com.life.master_api.entities.User;
+import com.life.master_api.exceptions.ResourceNotFoundException;
 import com.life.master_api.repositories.CategoryRepository;
 import com.life.master_api.repositories.HabitRepository;
 import com.life.master_api.repositories.NoteHistoryRepository;
 import com.life.master_api.repositories.NoteRepository;
 import com.life.master_api.repositories.TaskRepository;
+import com.life.master_api.repositories.UserRepository;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -33,7 +40,9 @@ import java.util.ArrayList;
 import java.util.Comparator;
 
 @RestController
-@RequestMapping("/notes")
+@RequestMapping("/api/v1/notes")
+@Tag(name = "Notes", description = "API para gestión de notas")
+@SecurityRequirement(name = "bearerAuth")
 public class NoteController {
 
     private final NoteRepository noteRepository;
@@ -41,20 +50,34 @@ public class NoteController {
     private final CategoryRepository categoryRepository;
     private final TaskRepository taskRepository;
     private final HabitRepository habitRepository;
+    private final UserRepository userRepository;
 
     public NoteController(NoteRepository noteRepository,
                             NoteHistoryRepository noteHistoryRepository,
                             CategoryRepository categoryRepository,
                             TaskRepository taskRepository,
-                            HabitRepository habitRepository) {
+                            HabitRepository habitRepository,
+                            UserRepository userRepository) {
         this.noteRepository = noteRepository;
         this.noteHistoryRepository = noteHistoryRepository;
         this.categoryRepository = categoryRepository;
         this.taskRepository = taskRepository;
         this.habitRepository = habitRepository;
+        this.userRepository = userRepository;
     }
 
-    @Operation(summary = "Obtener todas las notas")
+    /**
+     * Obtiene el usuario autenticado actualmente
+     * @return Usuario autenticado
+     */
+    private User getCurrentUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String username = authentication.getName();
+        return userRepository.findByUsername(username)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+    }
+
+    @Operation(summary = "Obtener todas las notas del usuario autenticado")
     @ApiResponse(responseCode = "200", description = "Lista de notas obtenida exitosamente")
     @GetMapping
     public ResponseEntity<Map<String, Object>> getAllNotes(
@@ -63,11 +86,14 @@ public class NoteController {
             @RequestParam(defaultValue = "id") String sortBy,
             @RequestParam(defaultValue = "asc") String sortDir) {
         
+        // Obtener el usuario autenticado
+        User currentUser = getCurrentUser();
+        
         Sort sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name()) ? 
                 Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
         
         Pageable pageable = PageRequest.of(page, size, sort);
-        Page<Note> notePage = noteRepository.findAll(pageable);
+        Page<Note> notePage = noteRepository.findByUser(currentUser, pageable);
         
         Map<String, Object> response = new HashMap<>();
         response.put("content", notePage.getContent());
@@ -78,61 +104,76 @@ public class NoteController {
         return ResponseEntity.ok(response);
     }
 
-    @Operation(summary = "Crear una nueva nota")
+    @Operation(summary = "Crear una nueva nota para el usuario autenticado")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Nota creada exitosamente"),
             @ApiResponse(responseCode = "400", description = "Solicitud inválida")
     })
     @PostMapping
     public ResponseEntity<Note> createNote(@Valid @RequestBody Note note) {
+        // Obtener el usuario autenticado
+        User currentUser = getCurrentUser();
+        
         note.setCreation(new Date());
+        note.setUser(currentUser);
         Note savedNote = noteRepository.save(note);
         return new ResponseEntity<>(savedNote, HttpStatus.CREATED);
     }
 
-    @Operation(summary = "Obtener una nota por ID")
+    @Operation(summary = "Obtener una nota por ID del usuario autenticado")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Nota encontrada"),
-            @ApiResponse(responseCode = "404", description = "Nota no encontrada")
+            @ApiResponse(responseCode = "404", description = "Nota no encontrada o no pertenece al usuario")
     })
     @GetMapping("/{id}")
     public ResponseEntity<Note> getNoteById(@Parameter(description = "ID de la nota a obtener") @PathVariable Long id) {
-        return noteRepository.findById(id)
+        // Obtener el usuario autenticado
+        User currentUser = getCurrentUser();
+        
+        return noteRepository.findByIdAndUser(id, currentUser)
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    @Operation(summary = "Actualizar una nota existente (reemplazo completo)")
+    @Operation(summary = "Actualizar una nota existente del usuario autenticado (reemplazo completo)")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Nota actualizada exitosamente"),
-            @ApiResponse(responseCode = "404", description = "Nota no encontrada"),
+            @ApiResponse(responseCode = "404", description = "Nota no encontrada o no pertenece al usuario"),
             @ApiResponse(responseCode = "400", description = "Solicitud inválida")
     })
     @PutMapping("/{id}")
     public ResponseEntity<Note> updateNote(@Parameter(description = "ID de la nota a actualizar") @PathVariable Long id,
                                           @Valid @RequestBody Note noteDetails) {
-        return noteRepository.findById(id)
+        // Obtener el usuario autenticado
+        User currentUser = getCurrentUser();
+        
+        return noteRepository.findByIdAndUser(id, currentUser)
                 .map(existingNote -> {
                     // Save history before update
                     saveNoteHistory(existingNote);
 
                     existingNote.setTitle(noteDetails.getTitle());
                     existingNote.setNote(noteDetails.getNote());
+                    // Mantener el usuario actual
+                    existingNote.setUser(currentUser);
                     Note updatedNote = noteRepository.save(existingNote);
                     return ResponseEntity.ok(updatedNote);
                 })
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    @Operation(summary = "Actualizar parcialmente una nota existente")
+    @Operation(summary = "Actualizar parcialmente una nota existente del usuario autenticado")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Nota actualizada parcialmente exitosamente"),
-            @ApiResponse(responseCode = "404", description = "Nota no encontrada")
+            @ApiResponse(responseCode = "404", description = "Nota no encontrada o no pertenece al usuario")
     })
     @PatchMapping("/{id}")
     public ResponseEntity<Note> partialUpdateNote(@Parameter(description = "ID de la nota a actualizar") @PathVariable Long id,
                                                  @RequestBody Note noteDetails) {
-        return noteRepository.findById(id)
+        // Obtener el usuario autenticado
+        User currentUser = getCurrentUser();
+        
+        return noteRepository.findByIdAndUser(id, currentUser)
                 .map(existingNote -> {
                     // Save history before update
                     saveNoteHistory(existingNote);
@@ -143,20 +184,25 @@ public class NoteController {
                     if (noteDetails.getNote() != null) {
                         existingNote.setNote(noteDetails.getNote());
                     }
+                    // Mantener el usuario actual
+                    existingNote.setUser(currentUser);
                     Note updatedNote = noteRepository.save(existingNote);
                     return ResponseEntity.ok(updatedNote);
                 })
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    @Operation(summary = "Eliminar una nota por ID")
+    @Operation(summary = "Eliminar una nota por ID del usuario autenticado")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "204", description = "Nota eliminada exitosamente"),
-            @ApiResponse(responseCode = "404", description = "Nota no encontrada")
+            @ApiResponse(responseCode = "404", description = "Nota no encontrada o no pertenece al usuario")
     })
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteNote(@Parameter(description = "ID de la nota a eliminar") @PathVariable Long id) {
-        return noteRepository.findById(id)
+        // Obtener el usuario autenticado
+        User currentUser = getCurrentUser();
+        
+        return noteRepository.findByIdAndUser(id, currentUser)
                 .map(note -> {
                     noteRepository.delete(note);
                     return new ResponseEntity<Void>(HttpStatus.NO_CONTENT);
@@ -166,7 +212,7 @@ public class NoteController {
 
     // Endpoints para gestionar relaciones
 
-    @Operation(summary = "Obtener todas las categorías de una nota")
+    @Operation(summary = "Obtener todas las categorías de una nota del usuario autenticado")
     @GetMapping("/{id}/categories")
     public ResponseEntity<Map<String, Object>> getNoteCategories(
             @PathVariable Long id,
@@ -175,7 +221,10 @@ public class NoteController {
             @RequestParam(defaultValue = "id") String sortBy,
             @RequestParam(defaultValue = "asc") String sortDir) {
         
-        Optional<Note> noteOpt = noteRepository.findById(id);
+        // Obtener el usuario autenticado
+        User currentUser = getCurrentUser();
+        
+        Optional<Note> noteOpt = noteRepository.findByIdAndUser(id, currentUser);
         if (!noteOpt.isPresent()) {
             return ResponseEntity.notFound().build();
         }
@@ -220,11 +269,14 @@ public class NoteController {
         return ResponseEntity.ok(response);
     }
 
-    @Operation(summary = "Agregar una categoría a una nota")
+    @Operation(summary = "Agregar una categoría a una nota del usuario autenticado")
     @PostMapping("/{noteId}/categories/{categoryId}")
     public ResponseEntity<Void> addCategoryToNote(@PathVariable Long noteId, @PathVariable Long categoryId) {
-        Optional<Note> noteOpt = noteRepository.findById(noteId);
-        Optional<Category> categoryOpt = categoryRepository.findById(categoryId);
+        // Obtener el usuario autenticado
+        User currentUser = getCurrentUser();
+        
+        Optional<Note> noteOpt = noteRepository.findByIdAndUser(noteId, currentUser);
+        Optional<Category> categoryOpt = categoryRepository.findByIdAndUser(categoryId, currentUser);
 
         if (noteOpt.isPresent() && categoryOpt.isPresent()) {
             Note note = noteOpt.get();
@@ -236,11 +288,14 @@ public class NoteController {
         return ResponseEntity.notFound().build();
     }
 
-    @Operation(summary = "Eliminar una categoría de una nota")
+    @Operation(summary = "Eliminar una categoría de una nota del usuario autenticado")
     @DeleteMapping("/{noteId}/categories/{categoryId}")
     public ResponseEntity<Void> removeCategoryFromNote(@PathVariable Long noteId, @PathVariable Long categoryId) {
-        Optional<Note> noteOpt = noteRepository.findById(noteId);
-        Optional<Category> categoryOpt = categoryRepository.findById(categoryId);
+        // Obtener el usuario autenticado
+        User currentUser = getCurrentUser();
+        
+        Optional<Note> noteOpt = noteRepository.findByIdAndUser(noteId, currentUser);
+        Optional<Category> categoryOpt = categoryRepository.findByIdAndUser(categoryId, currentUser);
 
         if (noteOpt.isPresent() && categoryOpt.isPresent()) {
             Note note = noteOpt.get();
@@ -252,19 +307,25 @@ public class NoteController {
         return ResponseEntity.notFound().build();
     }
 
-    @Operation(summary = "Obtener todas las tareas relacionadas con una nota")
+    @Operation(summary = "Obtener todas las tareas relacionadas con una nota del usuario autenticado")
     @GetMapping("/{id}/tasks")
     public ResponseEntity<Set<Task>> getNoteTasks(@PathVariable Long id) {
-        return noteRepository.findById(id)
+        // Obtener el usuario autenticado
+        User currentUser = getCurrentUser();
+        
+        return noteRepository.findByIdAndUser(id, currentUser)
                 .map(note -> ResponseEntity.ok(note.getTasks()))
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    @Operation(summary = "Agregar una tarea a una nota")
+    @Operation(summary = "Agregar una tarea a una nota del usuario autenticado")
     @PostMapping("/{noteId}/tasks/{taskId}")
     public ResponseEntity<Void> addTaskToNote(@PathVariable Long noteId, @PathVariable Long taskId) {
-        Optional<Note> noteOpt = noteRepository.findById(noteId);
-        Optional<Task> taskOpt = taskRepository.findById(taskId);
+        // Obtener el usuario autenticado
+        User currentUser = getCurrentUser();
+        
+        Optional<Note> noteOpt = noteRepository.findByIdAndUser(noteId, currentUser);
+        Optional<Task> taskOpt = taskRepository.findByIdAndUser(taskId, currentUser);
 
         if (noteOpt.isPresent() && taskOpt.isPresent()) {
             Note note = noteOpt.get();
@@ -276,11 +337,14 @@ public class NoteController {
         return ResponseEntity.notFound().build();
     }
 
-    @Operation(summary = "Eliminar una tarea de una nota")
+    @Operation(summary = "Eliminar una tarea de una nota del usuario autenticado")
     @DeleteMapping("/{noteId}/tasks/{taskId}")
     public ResponseEntity<Void> removeTaskFromNote(@PathVariable Long noteId, @PathVariable Long taskId) {
-        Optional<Note> noteOpt = noteRepository.findById(noteId);
-        Optional<Task> taskOpt = taskRepository.findById(taskId);
+        // Obtener el usuario autenticado
+        User currentUser = getCurrentUser();
+        
+        Optional<Note> noteOpt = noteRepository.findByIdAndUser(noteId, currentUser);
+        Optional<Task> taskOpt = taskRepository.findByIdAndUser(taskId, currentUser);
 
         if (noteOpt.isPresent() && taskOpt.isPresent()) {
             Note note = noteOpt.get();
@@ -292,19 +356,25 @@ public class NoteController {
         return ResponseEntity.notFound().build();
     }
 
-    @Operation(summary = "Obtener todos los hábitos relacionados con una nota")
+    @Operation(summary = "Obtener todos los hábitos relacionados con una nota del usuario autenticado")
     @GetMapping("/{id}/habits")
     public ResponseEntity<Set<Habit>> getNoteHabits(@PathVariable Long id) {
-        return noteRepository.findById(id)
+        // Obtener el usuario autenticado
+        User currentUser = getCurrentUser();
+        
+        return noteRepository.findByIdAndUser(id, currentUser)
                 .map(note -> ResponseEntity.ok(note.getHabits()))
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    @Operation(summary = "Agregar un hábito a una nota")
+    @Operation(summary = "Agregar un hábito a una nota del usuario autenticado")
     @PostMapping("/{noteId}/habits/{habitId}")
     public ResponseEntity<Void> addHabitToNote(@PathVariable Long noteId, @PathVariable Long habitId) {
-        Optional<Note> noteOpt = noteRepository.findById(noteId);
-        Optional<Habit> habitOpt = habitRepository.findById(habitId);
+        // Obtener el usuario autenticado
+        User currentUser = getCurrentUser();
+        
+        Optional<Note> noteOpt = noteRepository.findByIdAndUser(noteId, currentUser);
+        Optional<Habit> habitOpt = habitRepository.findByIdAndUser(habitId, currentUser);
 
         if (noteOpt.isPresent() && habitOpt.isPresent()) {
             Note note = noteOpt.get();
@@ -316,11 +386,14 @@ public class NoteController {
         return ResponseEntity.notFound().build();
     }
 
-    @Operation(summary = "Eliminar un hábito de una nota")
+    @Operation(summary = "Eliminar un hábito de una nota del usuario autenticado")
     @DeleteMapping("/{noteId}/habits/{habitId}")
     public ResponseEntity<Void> removeHabitFromNote(@PathVariable Long noteId, @PathVariable Long habitId) {
-        Optional<Note> noteOpt = noteRepository.findById(noteId);
-        Optional<Habit> habitOpt = habitRepository.findById(habitId);
+        // Obtener el usuario autenticado
+        User currentUser = getCurrentUser();
+        
+        Optional<Note> noteOpt = noteRepository.findByIdAndUser(noteId, currentUser);
+        Optional<Habit> habitOpt = habitRepository.findByIdAndUser(habitId, currentUser);
 
         if (noteOpt.isPresent() && habitOpt.isPresent()) {
             Note note = noteOpt.get();
@@ -334,18 +407,36 @@ public class NoteController {
 
     // History Endpoints
 
-    @Operation(summary = "Obtener el historial de versiones de una nota")
+    @Operation(summary = "Obtener el historial de versiones de una nota del usuario autenticado")
     @GetMapping("/{id}/history")
     public ResponseEntity<List<NoteHistory>> getNoteHistory(@Parameter(description = "ID de la nota") @PathVariable Long id) {
+        // Obtener el usuario autenticado
+        User currentUser = getCurrentUser();
+        
+        // Verificar que la nota pertenece al usuario autenticado
+        Optional<Note> noteOpt = noteRepository.findByIdAndUser(id, currentUser);
+        if (!noteOpt.isPresent()) {
+            return ResponseEntity.notFound().build();
+        }
+        
         List<NoteHistory> history = noteHistoryRepository.findByNote_IdOrderByVersionIdDesc(id);
         return ResponseEntity.ok(history);
     }
 
-    @Operation(summary = "Obtener una versión específica del historial de una nota")
+    @Operation(summary = "Obtener una versión específica del historial de una nota del usuario autenticado")
     @GetMapping("/{id}/history/{versionId}")
     public ResponseEntity<NoteHistory> getNoteHistoryByVersion(
             @Parameter(description = "ID de la nota") @PathVariable Long id,
             @Parameter(description = "ID de la versión del historial") @PathVariable Long versionId) {
+        // Obtener el usuario autenticado
+        User currentUser = getCurrentUser();
+        
+        // Verificar que la nota pertenece al usuario autenticado
+        Optional<Note> noteOpt = noteRepository.findByIdAndUser(id, currentUser);
+        if (!noteOpt.isPresent()) {
+            return ResponseEntity.notFound().build();
+        }
+        
         List<NoteHistory> historyVersion = noteHistoryRepository.findByNote_IdAndVersionId(id, versionId);
         if (!historyVersion.isEmpty()) {
             return ResponseEntity.ok(historyVersion.get(0)); // Assuming versionId is unique for each note

@@ -57,7 +57,12 @@ public class Habit {
             inverseJoinColumns = @JoinColumn(name = "TaskId")
     )
     private Set<Task> tasks = new HashSet<>();
-
+    
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    @JsonIgnore
+    private User user;
+    
     @OneToMany(mappedBy = "habit", cascade = CascadeType.ALL, orphanRemoval = false, fetch = FetchType.LAZY)
     @JsonIgnore
     private List<HabitHistory> history;

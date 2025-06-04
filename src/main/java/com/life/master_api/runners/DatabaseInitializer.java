@@ -4,39 +4,65 @@ import com.life.master_api.entities.Category;
 import com.life.master_api.entities.Habit;
 import com.life.master_api.entities.Note;
 import com.life.master_api.entities.Task;
+import com.life.master_api.entities.User;
 import com.life.master_api.repositories.CategoryRepository;
 import com.life.master_api.repositories.HabitRepository;
 import com.life.master_api.repositories.NoteRepository;
 import com.life.master_api.repositories.TaskRepository;
+import com.life.master_api.repositories.UserRepository;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 
 @Component
+@Order(2) // Ejecutar después de UserMigrationRunner
 public class DatabaseInitializer implements CommandLineRunner {
 
     private final CategoryRepository categoryRepository;
     private final TaskRepository taskRepository;
     private final NoteRepository noteRepository;
     private final HabitRepository habitRepository;
+    private final UserRepository userRepository;
 
     public DatabaseInitializer(CategoryRepository categoryRepository,
                                TaskRepository taskRepository,
                                NoteRepository noteRepository,
-                               HabitRepository habitRepository) {
+                               HabitRepository habitRepository,
+                               UserRepository userRepository) {
         this.categoryRepository = categoryRepository;
         this.taskRepository = taskRepository;
         this.noteRepository = noteRepository;
         this.habitRepository = habitRepository;
+        this.userRepository = userRepository;
     }
 
     @Transactional
     @Override
     public void run(String... args) throws Exception {
+        // Deshabilitado: No inicializar datos automáticamente
+        // Los datos de ejemplo se crearán por usuario cuando sea necesario
+        System.out.println("DatabaseInitializer deshabilitado. Los datos se crearán por usuario.");
+        return;
+        
+        /*
+        // Verificar si ya existen categorías
+        if (categoryRepository.count() > 0) {
+            System.out.println("Ya existen datos en el sistema. Omitiendo inicialización.");
+            return;
+        }
+        
         System.out.println("¡Inicializando la base de datos con MUCHAS relaciones entre entidades!");
+        
+        // Obtener el usuario administrador creado por UserMigrationRunner
+        User adminUser = userRepository.findByUsername("admin")
+                .orElseThrow(() -> new RuntimeException("Usuario administrador no encontrado. Asegúrate de que UserMigrationRunner se ejecute primero."));
+        */
+    }
 
+        /*
         // ==================== CATEGORÍAS ====================
         System.out.println("\n--- Creando Categorías ---");
         List<Category> categories = new ArrayList<>();
@@ -52,6 +78,7 @@ public class DatabaseInitializer implements CommandLineRunner {
             category.setName(categoryNames[i]);
             category.setDescription("Categoría para gestionar todo lo relacionado con " + categoryNames[i].toLowerCase());
             category.setCreation(new Date());
+            category.setUser(adminUser); // Asignar el usuario administrador
             categories.add(categoryRepository.save(category));
             System.out.println("Categoría creada: " + category.getName());
         }
@@ -71,6 +98,7 @@ public class DatabaseInitializer implements CommandLineRunner {
                     subCategory.setName(subName + " (" + mainCat.getName() + ")");
                     subCategory.setDescription("Subcategoría de " + mainCat.getName());
                     subCategory.setCreation(new Date());
+                    subCategory.setUser(adminUser); // Asignar el usuario administrador
                     subCats.add(categoryRepository.save(subCategory));
                     System.out.println("Subcategoría creada: " + subCategory.getName());
                 }
@@ -103,6 +131,7 @@ public class DatabaseInitializer implements CommandLineRunner {
             task.setTitle(taskTitles[i]);
             task.setDescription("Descripción detallada para la tarea: " + taskTitles[i]);
             task.setCreation(new Date());
+            task.setUser(adminUser); // Asignar el usuario administrador
 
             // Asignar entre 1 y 3 categorías aleatorias a cada tarea
             int numCategories = random.nextInt(3) + 1;
@@ -142,6 +171,7 @@ public class DatabaseInitializer implements CommandLineRunner {
             note.setNote("Contenido detallado para la nota: " + noteTitles[i] + "\n" +
                     "Esta nota contiene información importante relacionada con el tema.");
             note.setCreation(new Date());
+            note.setUser(adminUser); // Asignar el usuario administrador
 
             // Asignar entre 1 y 3 categorías aleatorias
             int numCategories = random.nextInt(3) + 1;
@@ -187,6 +217,7 @@ public class DatabaseInitializer implements CommandLineRunner {
             Habit habit = new Habit();
             habit.setName(habitNames[i]);
             habit.setCreation(new Date());
+            habit.setUser(adminUser); // Asignar el usuario administrador
 
             // Asignar entre 1 y 3 categorías aleatorias
             int numCategories = random.nextInt(3) + 1;
@@ -285,4 +316,5 @@ public class DatabaseInitializer implements CommandLineRunner {
         System.out.println("Total de relaciones creadas: " + totalRelations);
         System.out.println("\n¡Base de datos inicializada con una gran cantidad de relaciones entre entidades!");
     }
+    */
 }

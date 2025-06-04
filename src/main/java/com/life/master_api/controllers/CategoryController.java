@@ -5,15 +5,20 @@ import com.life.master_api.entities.CategoryHistory;
 import com.life.master_api.entities.Habit;
 import com.life.master_api.entities.Note;
 import com.life.master_api.entities.Task;
+import com.life.master_api.entities.User;
+import com.life.master_api.exceptions.ResourceNotFoundException;
 import com.life.master_api.repositories.CategoryHistoryRepository;
 import com.life.master_api.repositories.CategoryRepository;
 import com.life.master_api.repositories.HabitRepository;
 import com.life.master_api.repositories.NoteRepository;
 import com.life.master_api.repositories.TaskRepository;
+import com.life.master_api.repositories.UserRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -21,13 +26,17 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/categories")
+@RequestMapping("/api/v1/categories")
+@Tag(name = "Categories", description = "API para gestión de categorías")
+@SecurityRequirement(name = "bearerAuth")
 public class CategoryController {
 
     private final CategoryRepository categoryRepository;
@@ -35,20 +44,30 @@ public class CategoryController {
     private final TaskRepository taskRepository;
     private final NoteRepository noteRepository;
     private final HabitRepository habitRepository;
+    private final UserRepository userRepository;
 
     public CategoryController(CategoryRepository categoryRepository,
                                 CategoryHistoryRepository categoryHistoryRepository,
                                 TaskRepository taskRepository,
                                 NoteRepository noteRepository,
-                                HabitRepository habitRepository) {
+                                HabitRepository habitRepository,
+                                UserRepository userRepository) {
         this.categoryRepository = categoryRepository;
         this.categoryHistoryRepository = categoryHistoryRepository;
         this.taskRepository = taskRepository;
         this.noteRepository = noteRepository;
         this.habitRepository = habitRepository;
+        this.userRepository = userRepository;
+    }
+    
+    // Método para obtener el usuario autenticado actual
+    private User getCurrentUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        return userRepository.findByUsername(authentication.getName())
+                .orElseThrow(() -> new ResourceNotFoundException("User", "username", authentication.getName()));
     }
 
-    @Operation(summary = "Obtener todas las categorías")
+    @Operation(summary = "Obtener todas las categorías del usuario autenticado")
     @ApiResponse(responseCode = "200", description = "Lista de categorías obtenida exitosamente")
     @GetMapping
     public ResponseEntity<Map<String, Object>> getAllCategories(
@@ -57,11 +76,14 @@ public class CategoryController {
             @RequestParam(defaultValue = "id") String sortBy,
             @RequestParam(defaultValue = "asc") String sortDir) {
         
+        // Obtener el usuario autenticado
+        User currentUser = getCurrentUser();
+        
         Sort sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name()) ? 
                 Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
         
         Pageable pageable = PageRequest.of(page, size, sort);
-        Page<Category> categoryPage = categoryRepository.findAll(pageable);
+        Page<Category> categoryPage = categoryRepository.findByUser(currentUser, pageable);
         
         Map<String, Object> response = new HashMap<>();
         response.put("content", categoryPage.getContent());
@@ -72,19 +94,22 @@ public class CategoryController {
         return ResponseEntity.ok(response);
     }
 
-    @Operation(summary = "Obtener una categoría por ID")
+    @Operation(summary = "Obtener una categoría por ID del usuario autenticado")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Categoría encontrada"),
-            @ApiResponse(responseCode = "404", description = "Categoría no encontrada")
+            @ApiResponse(responseCode = "404", description = "Categoría no encontrada o no pertenece al usuario")
     })
     @GetMapping("/{id}")
     public ResponseEntity<Category> getCategoryById(@Parameter(description = "ID de la categoría a obtener") @PathVariable Long id) {
-        return categoryRepository.findById(id)
+        // Obtener el usuario autenticado
+        User currentUser = getCurrentUser();
+        
+        return categoryRepository.findByIdAndUser(id, currentUser)
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    @Operation(summary = "Buscar categorías por nombre (parcial)")
+    @Operation(summary = "Buscar categorías por nombre (parcial) del usuario autenticado")
     @ApiResponse(responseCode = "200", description = "Lista de categorías que coinciden con el nombre")
     @GetMapping("/search/by-name")
     public ResponseEntity<Map<String, Object>> getCategoriesByName(
@@ -94,11 +119,14 @@ public class CategoryController {
             @RequestParam(defaultValue = "id") String sortBy,
             @RequestParam(defaultValue = "asc") String sortDir) {
         
+        // Obtener el usuario autenticado
+        User currentUser = getCurrentUser();
+        
         Sort sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name()) ? 
                 Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
         
         Pageable pageable = PageRequest.of(page, size, sort);
-        Page<Category> categoryPage = categoryRepository.findByNameContains(name, pageable);
+        Page<Category> categoryPage = categoryRepository.findByUserAndNameContains(currentUser, name, pageable);
         
         Map<String, Object> response = new HashMap<>();
         response.put("content", categoryPage.getContent());
@@ -109,49 +137,61 @@ public class CategoryController {
         return ResponseEntity.ok(response);
     }
 
-    @Operation(summary = "Crear una nueva categoría")
+    @Operation(summary = "Crear una nueva categoría para el usuario autenticado")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Categoría creada exitosamente"),
             @ApiResponse(responseCode = "400", description = "Solicitud inválida")
     })
     @PostMapping
     public ResponseEntity<Category> createCategory(@Valid @RequestBody Category category) {
+        // Obtener el usuario autenticado
+        User currentUser = getCurrentUser();
+        
+        category.setUser(currentUser);
         category.setCreation(new Date());
         Category savedCategory = categoryRepository.save(category);
         return new ResponseEntity<>(savedCategory, HttpStatus.CREATED);
     }
 
-    @Operation(summary = "Actualizar una categoría existente (reemplazo completo)")
+    @Operation(summary = "Actualizar una categoría existente del usuario autenticado (reemplazo completo)")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Categoría actualizada exitosamente"),
-            @ApiResponse(responseCode = "404", description = "Categoría no encontrada"),
+            @ApiResponse(responseCode = "404", description = "Categoría no encontrada o no pertenece al usuario"),
             @ApiResponse(responseCode = "400", description = "Solicitud inválida")
     })
     @PutMapping("/{id}")
     public ResponseEntity<Category> updateCategory(@Parameter(description = "ID de la categoría a actualizar") @PathVariable Long id,
                                                   @Valid @RequestBody Category categoryDetails) {
-        return categoryRepository.findById(id)
+        // Obtener el usuario autenticado
+        User currentUser = getCurrentUser();
+        
+        return categoryRepository.findByIdAndUser(id, currentUser)
                 .map(existingCategory -> {
                     // Save history before update
                     saveCategoryHistory(existingCategory);
 
                     existingCategory.setName(categoryDetails.getName());
                     existingCategory.setDescription(categoryDetails.getDescription());
+                    // Mantener el usuario actual
+                    existingCategory.setUser(currentUser);
                     Category updatedCategory = categoryRepository.save(existingCategory);
                     return ResponseEntity.ok(updatedCategory);
                 })
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    @Operation(summary = "Actualizar parcialmente una categoría existente")
+    @Operation(summary = "Actualizar parcialmente una categoría existente del usuario autenticado")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Categoría actualizada parcialmente exitosamente"),
-            @ApiResponse(responseCode = "404", description = "Categoría no encontrada")
+            @ApiResponse(responseCode = "404", description = "Categoría no encontrada o no pertenece al usuario")
     })
     @PatchMapping("/{id}")
     public ResponseEntity<Category> patchCategory(@Parameter(description = "ID de la categoría a actualizar") @PathVariable Long id,
                                                  @RequestBody Category categoryDetails) {
-        return categoryRepository.findById(id)
+        // Obtener el usuario autenticado
+        User currentUser = getCurrentUser();
+        
+        return categoryRepository.findByIdAndUser(id, currentUser)
                 .map(existingCategory -> {
                     // Save history before update
                     saveCategoryHistory(existingCategory);
@@ -162,20 +202,25 @@ public class CategoryController {
                     if (categoryDetails.getDescription() != null) {
                         existingCategory.setDescription(categoryDetails.getDescription());
                     }
+                    // Mantener el usuario actual
+                    existingCategory.setUser(currentUser);
                     Category patchedCategory = categoryRepository.save(existingCategory);
                     return ResponseEntity.ok(patchedCategory);
                 })
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    @Operation(summary = "Eliminar una categoría por ID")
+    @Operation(summary = "Eliminar una categoría por ID del usuario autenticado")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "204", description = "Categoría eliminada exitosamente"),
-            @ApiResponse(responseCode = "404", description = "Categoría no encontrada")
+            @ApiResponse(responseCode = "404", description = "Categoría no encontrada o no pertenece al usuario")
     })
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteCategory(@Parameter(description = "ID de la categoría a eliminar") @PathVariable Long id) {
-        return categoryRepository.findById(id)
+        // Obtener el usuario autenticado
+        User currentUser = getCurrentUser();
+        
+        return categoryRepository.findByIdAndUser(id, currentUser)
                 .map(category -> {
                     categoryRepository.delete(category);
                     return new ResponseEntity<Void>(HttpStatus.NO_CONTENT);
@@ -185,7 +230,7 @@ public class CategoryController {
 
     // Endpoints para gestionar relaciones
 
-    @Operation(summary = "Obtener todas las tareas de una categoría")
+    @Operation(summary = "Obtener todas las tareas de una categoría del usuario autenticado")
     @GetMapping("/{id}/tasks")
     public ResponseEntity<Map<String, Object>> getCategoryTasks(
             @PathVariable Long id,
@@ -194,7 +239,10 @@ public class CategoryController {
             @RequestParam(defaultValue = "id") String sortBy,
             @RequestParam(defaultValue = "asc") String sortDir) {
         
-        Optional<Category> categoryOpt = categoryRepository.findById(id);
+        // Obtener el usuario autenticado
+        User currentUser = getCurrentUser();
+        
+        Optional<Category> categoryOpt = categoryRepository.findByIdAndUser(id, currentUser);
         if (!categoryOpt.isPresent()) {
             return ResponseEntity.notFound().build();
         }
@@ -356,7 +404,16 @@ public class CategoryController {
     @Operation(summary = "Obtener el historial de versiones de una categoría")
     @GetMapping("/{id}/history")
     public ResponseEntity<List<CategoryHistory>> getCategoryHistory(@Parameter(description = "ID de la categoría") @PathVariable Long id) {
-        List<CategoryHistory> history = categoryHistoryRepository.findByCategory_IdOrderByVersionIdDesc(id);
+        // Obtener el usuario autenticado
+        User currentUser = getCurrentUser();
+        
+        // Verificar que la categoría pertenece al usuario autenticado
+        Optional<Category> categoryOpt = categoryRepository.findByIdAndUser(id, currentUser);
+        if (!categoryOpt.isPresent()) {
+            return ResponseEntity.notFound().build();
+        }
+        
+        List<CategoryHistory> history = categoryHistoryRepository.findByCategory_IdAndUserOrderByVersionIdDesc(id, currentUser);
         return ResponseEntity.ok(history);
     }
 
@@ -365,7 +422,16 @@ public class CategoryController {
     public ResponseEntity<CategoryHistory> getCategoryHistoryByVersion(
             @Parameter(description = "ID de la categoría") @PathVariable Long id,
             @Parameter(description = "ID de la versión del historial") @PathVariable Long versionId) {
-        List<CategoryHistory> historyVersion = categoryHistoryRepository.findByCategory_IdAndVersionId(id, versionId);
+        // Obtener el usuario autenticado
+        User currentUser = getCurrentUser();
+        
+        // Verificar que la categoría pertenece al usuario autenticado
+        Optional<Category> categoryOpt = categoryRepository.findByIdAndUser(id, currentUser);
+        if (!categoryOpt.isPresent()) {
+            return ResponseEntity.notFound().build();
+        }
+        
+        List<CategoryHistory> historyVersion = categoryHistoryRepository.findByCategory_IdAndVersionIdAndUser(id, versionId, currentUser);
         if (!historyVersion.isEmpty()) {
             return ResponseEntity.ok(historyVersion.get(0)); // Assuming versionId is unique for each category
         } else {
@@ -377,6 +443,7 @@ public class CategoryController {
     private void saveCategoryHistory(Category category) {
         CategoryHistory history = new CategoryHistory();
         history.setCategory(category);
+        history.setUser(getCurrentUser()); // Assign current user for data isolation
         history.setName(category.getName());
         history.setDescription(category.getDescription());
         history.setCreation(category.getCreation());

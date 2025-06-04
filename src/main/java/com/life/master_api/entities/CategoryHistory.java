@@ -6,6 +6,8 @@ import lombok.EqualsAndHashCode;
 
 import java.util.Date;
 
+import com.life.master_api.entities.User;
+
 @Entity
 @Table(name = "CategoryHistory")
 @Data
@@ -22,6 +24,10 @@ public class CategoryHistory {
     @JoinColumn(name = "category_id", nullable = false)
     private Category category; // Reference to the original Category entity
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = true)
+    private User user;
+
     @Column(nullable = false)
     private String name;
 
@@ -34,6 +40,5 @@ public class CategoryHistory {
     @Column(nullable = false)
     private Date timestamp; // Timestamp of the change
 
-    // Optional: Add a user_id or modified_by field to track who made the change
-    // private Long modifiedBy;
+    // User relationship added for data isolation
 }

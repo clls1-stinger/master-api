@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plan de Implementación Actualizado - Master API</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+            color: #333;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #2980b9;
+            margin-top: 30px;
+            border-left: 4px solid #3498db;
+            padding-left: 10px;
+        }
+        h3 {
+            color: #16a085;
+            margin-top: 20px;
+        }
+        .section {
+            margin-bottom: 30px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+            border-left: 4px solid #3498db;
+        }
+        .task {
+            background-color: #e8f4f8;
+            padding: 10px 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border-left: 3px solid #2980b9;
+        }
+        .task h4 {
+            margin-top: 0;
+            color: #2c3e50;
+        }
+        code {
+            background-color: #f0f0f0;
+            padding: 2px 5px;
+            border-radius: 3px;
+            font-family: Consolas, monospace;
+            font-size: 0.9em;
+        }
+        pre {
+            background-color: #f0f0f0;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-family: Consolas, monospace;
+            font-size: 0.9em;
+        }
+        ul, ol {
+            padding-left: 20px;
+        }
+        li {
+            margin-bottom: 8px;
+        }
+        .priority {
+            font-weight: bold;
+            margin-right: 5px;
+        }
+        .priority-high {
+            color: #e74c3c;
+        }
+        .priority-medium {
+            color: #f39c12;
+        }
+        .priority-low {
+            color: #27ae60;
+        }
+        .note {
+            background-color: #fef9e7;
+            padding: 10px 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border-left: 3px solid #f1c40f;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .highlight {
+            background-color: #ffffcc;
+            padding: 2px;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Plan de Implementación Actualizado - Master API</h1>
+        
+        <div class="section">
+            <h2>Resumen Ejecutivo</h2>
+            <p>Este documento detalla las modificaciones necesarias para agregar dos funcionalidades principales a la API actual:</p>
+            <ol>
+                <li><strong>Soporte Multi-Usuario:</strong> Permitir que múltiples usuarios utilicen la aplicación con sus propios datos aislados.</li>
+                <li><strong>Soporte para Archivos e Imágenes:</strong> Habilitar la carga y gestión de archivos e imágenes en los endpoints de categorías, notas, tareas y hábitos, <span class="highlight">almacenando los archivos directamente en la base de datos PostgreSQL</span>.</li>
+            </ol>
+        </div>
+
+        <div class="section">
+            <h2>1. Implementación de Soporte Multi-Usuario</h2>
+            
+            <h3>1.1. Modelo de Usuario</h3>
+            <div class="task">
+                <h4>Crear entidad User</h4>
+                <p>Implementar la clase de entidad para representar usuarios en el sistema.</p>
+                <pre>@Entity
+@Table(name = "Users")
+@Data
+@EqualsAndHashCode(of = "id")
+public class User {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(nullable = false, unique = true)
+    @NotBlank(message = "El nombre de usuario no puede estar vacío")
+    private String username;
+
+    @Column(nullable = false)
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+    @NotBlank(message = "La contraseña no puede estar vacía")
+    private String password;
+
+    @Column(nullable = false, unique = true)
+    @Email(message = "El correo electrónico debe ser válido")
+    @NotBlank(message = "El correo electrónico no puede estar vacío")
+    private String email;
+
+    @Column(nullable = false)
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date createdAt;
+
+    @Column
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date lastLogin;
+
+    // Relaciones con otras entidades
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
+    private List<Category> categories = new ArrayList<>();
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
+    private List<Task> tasks = new ArrayList<>();
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
+    private List<Note> notes = new ArrayList<>();
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
+    private List<Habit> habits = new ArrayList<>();
+}</pre>
+            </div>
+
+            <h3>1.2. Modificación de Entidades Existentes</h3>
+            <div class="task">
+                <h4>Actualizar entidades para incluir referencia al usuario</h4>
+                <p>Modificar las entidades Category, Task, Note y Habit para incluir una referencia al usuario propietario.</p>
+                <p>Ejemplo para Category:</p>
+                <pre>@Entity
+@Table(name = "Categories")
+public class Category {
+    // Campos existentes...
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    @JsonIgnore
+    private User user;
+
+    // Resto de la clase...
+}</pre>
+                <p>Aplicar cambios similares a Task, Note y Habit.</p>
+            </div>
+
+            <h3>1.3. Seguridad y Autenticación</h3>
+            <div class="task">
+                <h4>Implementar Spring Security</h4>
+                <p>Configurar Spring Security para autenticación y autorización.</p>
+                <ol>
+                    <li>Agregar dependencias en pom.xml:</li>
+                </ol>
+                <pre>&lt;dependency&gt;
+    &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
+    &lt;artifactId&gt;spring-boot-starter-security&lt;/artifactId&gt;
+&lt;/dependency&gt;
+&lt;dependency&gt;
+    &lt;groupId&gt;io.jsonwebtoken&lt;/groupId&gt;
+    &lt;artifactId&gt;jjwt-api&lt;/artifactId&gt;
+    &lt;version&gt;0.11.5&lt;/version&gt;
+&lt;/dependency&gt;
+&lt;dependency&gt;
+    &lt;groupId&gt;io.jsonwebtoken&lt;/groupId&gt;
+    &lt;artifactId&gt;jjwt-impl&lt;/artifactId&gt;
+    &lt;version&gt;0.11.5&lt;/version&gt;
+&lt;/dependency&gt;
+&lt;dependency&gt;
+    &lt;groupId&gt;io.jsonwebtoken&lt;/groupId&gt;
+    &lt;artifactId&gt;jjwt-jackson&lt;/artifactId&gt;
+    &lt;version&gt;0.11.5&lt;/version&gt;
+&lt;/dependency&gt;</pre>
+            </div>
+
+            <div class="task">
+                <h4>Crear clases de seguridad</h4>
+                <p>Implementar las clases necesarias para la autenticación JWT:</p>
+                <ul>
+                    <li>JwtTokenProvider: Para generar y validar tokens</li>
+                    <li>JwtAuthenticationFilter: Para procesar tokens en las solicitudes</li>
+                    <li>SecurityConfig: Para configurar las reglas de seguridad</li>
+                    <li>UserDetailsServiceImpl: Para cargar usuarios desde la base de datos</li>
+                </ul>
+            </div>
+
+            <div class="task">
+                <h4>Crear controlador de autenticación</h4>
+                <p>Implementar endpoints para registro e inicio de sesión:</p>
+                <pre>@RestController
+@RequestMapping("/auth")
+public class AuthController {
+    // Inyección de dependencias...
+
+    @PostMapping("/register")
+    public ResponseEntity<?> registerUser(@Valid @RequestBody UserRegistrationDto registrationDto) {
+        // Lógica de registro...
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<?> authenticateUser(@Valid @RequestBody LoginDto loginDto) {
+        // Lógica de autenticación...
+    }
+}</pre>
+            </div>
+
+            <h3>1.4. Modificación de Repositorios</h3>
+            <div class="task">
+                <h4>Actualizar repositorios para filtrar por usuario</h4>
+                <p>Modificar los repositorios para incluir métodos que filtren por usuario:</p>
+                <pre>public interface CategoryRepository extends JpaRepository<Category, Long> {
+    List<Category> findByUser(User user);
+    Page<Category> findByUser(User user, Pageable pageable);
+    Optional<Category> findByIdAndUser(Long id, User user);
+}</pre>
+                <p>Aplicar cambios similares a TaskRepository, NoteRepository y HabitRepository.</p>
+            </div>
+
+            <h3>1.5. Modificación de Controladores</h3>
+            <div class="task">
+                <h4>Actualizar controladores para trabajar con el usuario autenticado</h4>
+                <p>Modificar los controladores para que todas las operaciones se realicen en el contexto del usuario autenticado:</p>
+                <pre>@RestController
+@RequestMapping("/categories")
+public class CategoryController {
+    // Inyección de dependencias...
+
+    @GetMapping
+    public ResponseEntity<Map<String, Object>> getAllCategories(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "id") String sortBy,
+            @RequestParam(defaultValue = "asc") String sortDir) {
+        
+        // Obtener el usuario autenticado
+        User currentUser = getCurrentUser();
+        
+        Sort sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name()) ? 
+                Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
+        
+        Pageable pageable = PageRequest.of(page, size, sort);
+        Page<Category> categoryPage = categoryRepository.findByUser(currentUser, pageable);
+        
+        // Resto del método...
+    }
+
+    // Método auxiliar para obtener el usuario actual
+    private User getCurrentUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String username = authentication.getName();
+        return userRepository.findByUsername(username)
+                .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado: " + username));
+    }
+
+    // Resto de métodos actualizados...
+}</pre>
+                <p>Aplicar cambios similares a TaskController, NoteController y HabitController.</p>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>2. Implementación de Soporte para Archivos e Imágenes (Almacenamiento en PostgreSQL)</h2>
+            
+            <h3>2.1. Configuración de la Base de Datos</h3>
+            <div class="task">
+                <h4>Configurar propiedades para archivos grandes en PostgreSQL</h4>
+                <p>Agregar configuración para el manejo de archivos grandes en application.properties:</p>
+                <pre># Configuración para almacenamiento de archivos en PostgreSQL
+spring.servlet.multipart.max-file-size=10MB
+spring.servlet.multipart.max-request-size=10MB
+
+# Configuración adicional para PostgreSQL y manejo de LOBs
+spring.datasource.hikari.auto-commit=false
+spring.jpa.properties.hibernate.jdbc.lob.non_contextual_creation=true</pre>
+            </div>
+
+            <h3>2.2. Modelo de Archivo</h3>
+            <div class="task">
+                <h4>Crear entidad FileAttachment con soporte para almacenamiento binario</h4>
+                <pre>@Entity
+@Table(name = "FileAttachments")
+@Data
+@EqualsAndHashCode(of = "id")
+public class FileAttachment {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(nullable = false)
+    private String originalFileName;
+
+    @Column(nullable = false)
+    private String fileType;
+
+    @Column(nullable = false)
+    private Long fileSize;
+
+    @Column(nullable = false)
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date uploadDate;
+
+    // Contenido del archivo almacenado como BYTEA en PostgreSQL
+    @Lob
+    @Column(name = "file_data", nullable = false)
+    private byte[] fileData;
+
+    // Relaciones polimórficas usando discriminador
+    @Column(name = "entity_type")
+    private String entityType; // "CATEGORY", "TASK", "NOTE", "HABIT"
+
+    @Column(name = "entity_id")
+    private Long entityId;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    @JsonIgnore
+    private User user;
+}</pre>
+            </div>
+
+            <h3>2.3. Repositorio de Archivos</h3>
+            <div class="task">
+                <h4>Crear repositorio para FileAttachment</h4>
+                <pre>public interface FileAttachmentRepository extends JpaRepository<FileAttachment, Long> {
+    List<FileAttachment> findByEntityTypeAndEntityId(String entityType, Long entityId);
+    List<FileAttachment> findByEntityTypeAndEntityIdAndUser(String entityType, Long entityId, User user);
+    Optional<FileAttachment> findByIdAndUser(Long id, User user);
+    void deleteByEntityTypeAndEntityId(String entityType, Long entityId);
+}</pre>
+            </div>
+
+            <h3>2.4. Servicio de Gestión de Archivos</h3>
+            <div class="task">
+                <h4>Implementar servicio para gestionar archivos en la base de datos</h4>
+                <pre>@Service
+public class FileStorageService {
+
+    private final FileAttachmentRepository fileAttachmentRepository;
+
+    @Autowired
+    public FileStorageService(FileAttachmentRepository fileAttachmentRepository) {
+        this.fileAttachmentRepository = fileAttachmentRepository;
+    }
+
+    @Transactional
+    public FileAttachment storeFile(MultipartFile file, String entityType, Long entityId, User user) {
+        try {
+            // Validar archivo
+            if (file.isEmpty()) {
+                throw new FileStorageException("No se puede almacenar un archivo vacío");
+            }
+
+            // Normalizar nombre de archivo
+            String fileName = StringUtils.cleanPath(file.getOriginalFilename());
+            if (fileName.contains("..")) {
+                throw new FileStorageException("El nombre del archivo contiene una secuencia de ruta inválida " + fileName);
+            }
+
+            // Crear entidad FileAttachment
+            FileAttachment attachment = new FileAttachment();
+            attachment.setOriginalFileName(fileName);
+            attachment.setFileType(file.getContentType());
+            attachment.setFileSize(file.getSize());
+            attachment.setUploadDate(new Date());
+            attachment.setFileData(file.getBytes()); // Almacenar contenido binario
+            attachment.setEntityType(entityType.toUpperCase());
+            attachment.setEntityId(entityId);
+            attachment.setUser(user);
+
+            // Guardar en base de datos
+            return fileAttachmentRepository.save(attachment);
+
+        } catch (IOException ex) {
+            throw new FileStorageException("No se pudo almacenar el archivo " + file.getOriginalFilename(), ex);
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public FileAttachment getFile(Long fileId, User user) {
+        return fileAttachmentRepository.findByIdAndUser(fileId, user)
+                .orElseThrow(() -> new ResourceNotFoundException("Archivo no encontrado con id: " + fileId));
+    }
+
+    @Transactional
+    public void deleteFile(Long fileId, User user) {
+        FileAttachment attachment = fileAttachmentRepository.findByIdAndUser(fileId, user)
+                .orElseThrow(() -> new ResourceNotFoundException("Archivo no encontrado con id: " + fileId));
+        
+        fileAttachmentRepository.delete(attachment);
+    }
+
+    @Transactional(readOnly = true)
+    public List<FileAttachment> getFilesByEntity(String entityType, Long entityId, User user) {
+        return fileAttachmentRepository.findByEntityTypeAndEntityIdAndUser(
+                entityType.toUpperCase(), entityId, user);
+    }
+}</pre>
+            </div>
+
+            <h3>2.5. Controlador de Archivos</h3>
+            <div class="task">
+                <h4>Implementar controlador para gestión de archivos</h4>
+                <pre>@RestController
+@RequestMapping("/api/files")
+public class FileController {
+    private final FileStorageService fileStorageService;
+    private final UserRepository userRepository;
+    private final CategoryRepository categoryRepository;
+    private final TaskRepository taskRepository;
+    private final NoteRepository noteRepository;
+    private final HabitRepository habitRepository;
+
+    @Autowired
+    public FileController(FileStorageService fileStorageService, 
+                          UserRepository userRepository,
+                          CategoryRepository categoryRepository,
+                          TaskRepository taskRepository,
+                          NoteRepository noteRepository,
+                          HabitRepository habitRepository) {
+        this.fileStorageService = fileStorageService;
+        this.userRepository = userRepository;
+        this.categoryRepository = categoryRepository;
+        this.taskRepository = taskRepository;
+        this.noteRepository = noteRepository;
+        this.habitRepository = habitRepository;
+    }
+
+    @PostMapping("/upload/{entityType}/{entityId}")
+    public ResponseEntity<FileAttachmentDto> uploadFile(
+            @PathVariable String entityType,
+            @PathVariable Long entityId,
+            @RequestParam("file") MultipartFile file) {
+        
+        // Obtener usuario actual
+        User currentUser = getCurrentUser();
+        
+        // Validar que la entidad exista y pertenezca al usuario
+        validateEntityOwnership(entityType, entityId, currentUser);
+        
+        // Almacenar archivo en la base de datos
+        FileAttachment savedAttachment = fileStorageService.storeFile(
+                file, entityType, entityId, currentUser);
+        
+        // Convertir a DTO para evitar serializar los datos binarios
+        FileAttachmentDto dto = mapToDto(savedAttachment);
+        
+        return ResponseEntity.ok(dto);
+    }
+
+    @GetMapping("/download/{fileId}")
+    public ResponseEntity<byte[]> downloadFile(@PathVariable Long fileId) {
+        // Obtener usuario actual
+        User currentUser = getCurrentUser();
+        
+        // Buscar archivo
+        FileAttachment attachment = fileStorageService.getFile(fileId, currentUser);
+        
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(attachment.getFileType()))
+                .header(HttpHeaders.CONTENT_DISPOSITION, 
+                        "attachment; filename=\"" + attachment.getOriginalFileName() + "\"")
+                .body(attachment.getFileData());
+    }
+
+    @GetMapping("/entity/{entityType}/{entityId}")
+    public ResponseEntity<List<FileAttachmentDto>> getFilesByEntity(
+            @PathVariable String entityType,
+            @PathVariable Long entityId) {
+        
+        // Obtener usuario actual
+        User currentUser = getCurrentUser();
+        
+        List<FileAttachment> attachments = fileStorageService.getFilesByEntity(
+                entityType, entityId, currentUser);
+        
+        List<FileAttachmentDto> dtos = attachments.stream()
+                .map(this::mapToDto)
+                .collect(Collectors.toList());
+        
+        return ResponseEntity.ok(dtos);
+    }
+
+    @DeleteMapping("/{fileId}")
+    public ResponseEntity<?> deleteFile(@PathVariable Long fileId) {
+        // Obtener usuario actual
+        User currentUser = getCurrentUser();
+        
+        // Eliminar archivo
+        fileStorageService.deleteFile(fileId, currentUser);
+        
+        return ResponseEntity.ok().build();
+    }
+
+    // Método auxiliar para obtener el usuario actual
+    private User getCurrentUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String username = authentication.getName();
+        return userRepository.findByUsername(username)
+                .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado: " + username));
+    }
+
+    // Método para validar que la entidad pertenezca al usuario
+    private void validateEntityOwnership(String entityType, Long entityId, User user) {
+        boolean exists = false;
+        
+        switch (entityType.toUpperCase()) {
+            case "CATEGORY":
+                exists = categoryRepository.findByIdAndUser(entityId, user).isPresent();
+                break;
+            case "TASK":
+                exists = taskRepository.findByIdAndUser(entityId, user).isPresent();
+                break;
+            case "NOTE":
+                exists = noteRepository.findByIdAndUser(entityId, user).isPresent();
+                break;
+            case "HABIT":
+                exists = habitRepository.findByIdAndUser(entityId, user).isPresent();
+                break;
+            default:
+                throw new IllegalArgumentException("Tipo de entidad no válido: " + entityType);
+        }
+        
+        if (!exists) {
+            throw new ResourceNotFoundException(entityType + " no encontrado con id: " + entityId);
+        }
+    }
+    
+    // Método para mapear entidad a DTO (sin incluir datos binarios)
+    private FileAttachmentDto mapToDto(FileAttachment attachment) {
+        FileAttachmentDto dto = new FileAttachmentDto();
+        dto.setId(attachment.getId());
+        dto.setOriginalFileName(attachment.getOriginalFileName());
+        dto.setFileType(attachment.getFileType());
+        dto.setFileSize(attachment.getFileSize());
+        dto.setUploadDate(attachment.getUploadDate());
+        dto.setEntityType(attachment.getEntityType());
+        dto.setEntityId(attachment.getEntityId());
+        return dto;
+    }
+}</pre>
+            </div>
+
+            <h3>2.6. DTO para Archivos</h3>
+            <div class="task">
+                <h4>Crear DTO para transferencia de información de archivos</h4>
+                <pre>@Data
+public class FileAttachmentDto {
+    private Long id;
+    private String originalFileName;
+    private String fileType;
+    private Long fileSize;
+    private Date uploadDate;
+    private String entityType;
+    private Long entityId;
+    // No incluimos fileData para evitar transferir datos binarios innecesariamente
+}</pre>
+            </div>
+
+            <h3>2.7. Modificación de DTOs de Entidades</h3>
+            <div class="task">
+                <h4>Actualizar DTOs para incluir archivos adjuntos</h4>
+                <p>Modificar los DTOs de respuesta para incluir información sobre archivos adjuntos:</p>
+                <pre>public class TaskResponseDto {
+    private Long id;
+    private String title;
+    private String description;
+    private Date creation;
+    private List<CategoryDto> categories;
+    private List<FileAttachmentDto> attachments;
+    
+    // Getters y setters...
+}</pre>
+                <p>Aplicar cambios similares a CategoryResponseDto, NoteResponseDto y HabitResponseDto.</p>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>3. Consideraciones de Rendimiento para Almacenamiento en Base de Datos</h2>
+            
+            <h3>3.1. Optimización de PostgreSQL para Datos Binarios</h3>
+            <div class="task">
+                <h4>Configuración de PostgreSQL</h4>
+                <p>Ajustar la configuración de PostgreSQL para un mejor manejo de datos binarios grandes:</p>
+                <ul>
+                    <li>Aumentar <code>max_wal_size</code> para mejorar el rendimiento de escritura</li>
+                    <li>Ajustar <code>shared_buffers</code> para optimizar el almacenamiento en caché</li>
+                    <li>Configurar <code>work_mem</code> para operaciones que involucren archivos grandes</li>
+                    <li>Considerar el uso de <code>maintenance_work_mem</code> para operaciones de mantenimiento</li>
+                </ul>
+            </div>
+
+            <h3>3.2. Estrategias de Paginación y Carga Diferida</h3>
+            <div class="task">
+                <h4>Implementar carga diferida de datos binarios</h4>
+                <p>Para mejorar el rendimiento, implementar estrategias para cargar los datos binarios solo cuando sea necesario:</p>
+                <ul>
+                    <li>Utilizar DTOs sin datos binarios para listados</li>
+                    <li>Cargar los datos binarios solo en la operación de descarga</li>
+                    <li>Implementar paginación para listados de archivos</li>
+                </ul>
+            </div>
+
+            <h3>3.3. Límites y Validaciones</h3>
+            <div class="task">
+                <h4>Establecer límites para archivos</h4>
+                <p>Implementar validaciones y límites para evitar problemas de rendimiento:</p>
+                <ul>
+                    <li>Limitar el tamaño máximo de archivos (recomendado: 10MB)</li>
+                    <li>Validar tipos MIME permitidos</li>
+                    <li>Limitar el número de archivos por entidad</li>
+                    <li>Implementar cuotas por usuario</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>4. Pruebas y Documentación</h2>
+            
+            <h3>4.1. Pruebas Unitarias</h3>
+            <div class="task">
+                <h4>Implementar pruebas unitarias para las nuevas funcionalidades</h4>
+                <ul>
+                    <li>Pruebas para autenticación y autorización</li>
+                    <li>Pruebas para manejo de archivos en la base de datos</li>
+                    <li>Pruebas para verificar el aislamiento de datos entre usuarios</li>
+                </ul>
+            </div>
+
+            <h3>4.2. Pruebas de Integración</h3>
+            <div class="task">
+                <h4>Implementar pruebas de integración</h4>
+                <ul>
+                    <li>Pruebas de flujo completo de autenticación</li>
+                    <li>Pruebas de carga y descarga de archivos</li>
+                    <li>Pruebas de rendimiento con archivos de diferentes tamaños</li>
+                    <li>Pruebas de integración entre entidades y archivos adjuntos</li>
+                </ul>
+            </div>
+
+            <h3>4.3. Actualización de Documentación Swagger</h3>
+            <div class="task">
+                <h4>Actualizar anotaciones Swagger para los nuevos endpoints</h4>
+                <p>Asegurar que todos los nuevos endpoints estén correctamente documentados con anotaciones Swagger.</p>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>5. Plan de Migración</h2>
+            
+            <h3>5.1. Script de Migración de Base de Datos</h3>
+            <div class="task">
+                <h4>Crear script para migrar datos existentes</h4>
+                <p>Desarrollar un script que:</p>
+                <ol>
+                    <li>Cree un usuario administrador por defecto</li>
+                    <li>Asigne todos los datos existentes a este usuario</li>
+                    <li>Actualice las tablas con las nuevas columnas y relaciones</li>
+                </ol>
+            </div>
+
+            <h3>5.2. Plan de Despliegue</h3>
+            <div class="task">
+                <h4>Definir pasos para el despliegue</h4>
+                <ol>
+                    <li>Realizar copia de seguridad de la base de datos actual</li>
+                    <li>Ejecutar script de migración</li>
+                    <li>Desplegar nueva versión de la API</li>
+                    <li>Verificar funcionamiento</li>
+                </ol>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>6. Resumen de Cambios en la Base de Datos</h2>
+            
+            <h3>6.1. Nuevas Tablas</h3>
+            <ul>
+                <li><strong>Users:</strong> Almacena información de usuarios</li>
+                <li><strong>FileAttachments:</strong> Almacena metadatos y contenido binario de archivos adjuntos</li>
+            </ul>
+
+            <h3>6.2. Modificaciones a Tablas Existentes</h3>
+            <ul>
+                <li><strong>Categories:</strong> Agregar columna user_id (FK a Users)</li>
+                <li><strong>Tasks:</strong> Agregar columna user_id (FK a Users)</li>
+                <li><strong>Notes:</strong> Agregar columna user_id (FK a Users)</li>
+                <li><strong>Habits:</strong> Agregar columna user_id (FK a Users)</li>
+                <li><strong>*History:</strong> Agregar columna user_id (FK a Users) a todas las tablas de historial</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>7. Consideraciones de Seguridad</h2>
+            
+            <ul>
+                <li><strong>Validación de Archivos:</strong> Implementar validación de tipos MIME y escaneo de contenido malicioso</li>
+                <li><strong>Límites de Tamaño:</strong> Establecer límites razonables para el tamaño de archivos</li>
+                <li><strong>Aislamiento de Datos:</strong> Asegurar que los usuarios solo puedan acceder a sus propios datos</li>
+                <li><strong>Protección contra CSRF:</strong> Implementar tokens CSRF para proteger formularios</li>
+                <li><strong>Seguridad de Contraseñas:</strong> Utilizar algoritmos seguros para el hash de contraseñas</li>
+                <li><strong>Expiración de Tokens:</strong> Configurar tiempo de expiración adecuado para tokens JWT</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>8. Ventajas y Desventajas del Almacenamiento en Base de Datos</h2>
+            
+            <h3>8.1. Ventajas</h3>
+            <ul>
+                <li><strong>Transaccionalidad:</strong> Los archivos se gestionan dentro de las mismas transacciones que los datos relacionados</li>
+                <li><strong>Consistencia:</strong> Mayor garantía de que los archivos y sus metadatos están sincronizados</li>
+                <li><strong>Seguridad:</strong> Los archivos están protegidos por los mismos mecanismos de seguridad que el resto de datos</li>
+                <li><strong>Simplicidad:</strong> No es necesario gestionar un sistema de archivos separado</li>
+                <li><strong>Respaldos:</strong> Los archivos se incluyen automáticamente en los respaldos de la base de datos</li>
+            </ul>
+
+            <h3>8.2. Desventajas y Mitigaciones</h3>
+            <ul>
+                <li>
+                    <strong>Rendimiento:</strong> El almacenamiento de archivos grandes puede afectar el rendimiento de la base de datos
+                    <ul>
+                        <li><em>Mitigación:</em> Limitar el tamaño de archivos y optimizar la configuración de PostgreSQL</li>
+                    </ul>
+                </li>
+                <li>
+                    <strong>Tamaño de la Base de Datos:</strong> La base de datos crecerá más rápidamente
+                    <ul>
+                        <li><em>Mitigación:</em> Implementar políticas de retención y limpieza de archivos no utilizados</li>
+                    </ul>
+                </li>
+                <li>
+                    <strong>Respaldos más Grandes:</strong> Los respaldos serán más grandes y pueden tomar más tiempo
+                    <ul>
+                        <li><em>Mitigación:</em> Considerar estrategias de respaldo incrementales o diferenciales</li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>

@@ -45,6 +45,53 @@
         .legend li {
             margin: 5px 0;
         }
+        
+        /* Collapsible styles */
+        .collapsible {
+            background-color: #007bff;
+            color: white;
+            cursor: pointer;
+            padding: 10px;
+            width: 100%;
+            border: none;
+            text-align: left;
+            outline: none;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 5px;
+            margin: 10px 0 5px 0;
+            transition: background-color 0.3s;
+        }
+        
+        .collapsible:hover {
+            background-color: #0056b3;
+        }
+        
+        .collapsible:after {
+            content: '\002B'; /* Plus sign */
+            color: white;
+            font-weight: bold;
+            float: right;
+            margin-left: 5px;
+        }
+        
+        .collapsible.active:after {
+            content: '\2212'; /* Minus sign */
+        }
+        
+        .collapsible-content {
+            padding: 0;
+            display: none;
+            overflow: hidden;
+            background-color: #f8f9fa;
+            border-radius: 0 0 5px 5px;
+            margin-bottom: 10px;
+        }
+        
+        .collapsible-content.show {
+            display: block;
+            padding: 15px;
+        }
     </style>
 </head>
 <body>
@@ -54,12 +101,23 @@
         <div class="diagram-container">
             <div class="mermaid">
                 erDiagram
+                    %% Entidad de Usuarios (Multi-Usuario)
+                    USERS {
+                        BIGINT id PK
+                        VARCHAR username UK
+                        VARCHAR password
+                        VARCHAR email UK
+                        TIMESTAMP created_at
+                        TIMESTAMP last_login
+                    }
+                    
                     %% Entidades Principales
                     CATEGORIES {
                         BIGINT id PK
                         VARCHAR name
                         VARCHAR description
                         TIMESTAMP creation
+                        BIGINT user_id FK
                     }
                     
                     TASKS {
@@ -67,6 +125,7 @@
                         VARCHAR title
                         TEXT description
                         TIMESTAMP creation
+                        BIGINT user_id FK
                     }
                     
                     NOTES {
@@ -74,12 +133,27 @@
                         VARCHAR title
                         TEXT note
                         TIMESTAMP creation
+                        BIGINT user_id FK
                     }
                     
                     HABITS {
                         BIGINT id PK
                         VARCHAR name
                         TIMESTAMP creation
+                        BIGINT user_id FK
+                    }
+                    
+                    %% Entidad de Archivos Adjuntos
+                    FILEATTACHMENTS {
+                        BIGINT id PK
+                        VARCHAR original_file_name
+                        VARCHAR file_type
+                        BIGINT file_size
+                        TIMESTAMP upload_date
+                        BYTEA file_data
+                        VARCHAR entity_type
+                        BIGINT entity_id
+                        BIGINT user_id FK
                     }
                     
                     %% Entidades de Historial
@@ -153,6 +227,13 @@
                         BIGINT TaskId FK
                     }
                     
+                    %% Relaciones One-to-Many (Usuario a Entidades)
+                    USERS ||--o{ CATEGORIES : "posee"
+                    USERS ||--o{ TASKS : "posee"
+                    USERS ||--o{ NOTES : "posee"
+                    USERS ||--o{ HABITS : "posee"
+                    USERS ||--o{ FILEATTACHMENTS : "posee"
+                    
                     %% Relaciones One-to-Many (Historial)
                     CATEGORIES ||--o{ CATEGORYHISTORY : "tiene historial"
                     TASKS ||--o{ TASKHISTORY : "tiene historial"
@@ -183,19 +264,29 @@
         <div class="legend">
             <h3>Leyenda del Diagrama</h3>
             <ul>
+                <li><strong>Entidad de Usuarios:</strong>
+                    <ul>
+                        <li><strong>USERS:</strong> Usuarios del sistema con autenticación y autorización. Cada usuario tiene sus propios datos aislados</li>
+                    </ul>
+                </li>
                 <li><strong>Entidades Principales:</strong>
                     <ul>
-                        <li><strong>CATEGORIES:</strong> Categorías para organizar elementos</li>
-                        <li><strong>TASKS:</strong> Tareas con título y descripción</li>
-                        <li><strong>NOTES:</strong> Notas con título y contenido</li>
-                        <li><strong>HABITS:</strong> Hábitos con nombre</li>
+                        <li><strong>CATEGORIES:</strong> Categorías para organizar elementos (pertenecen a un usuario específico)</li>
+                        <li><strong>TASKS:</strong> Tareas con título y descripción (pertenecen a un usuario específico)</li>
+                        <li><strong>NOTES:</strong> Notas con título y contenido (pertenecen a un usuario específico)</li>
+                        <li><strong>HABITS:</strong> Hábitos con nombre (pertenecen a un usuario específico)</li>
+                    </ul>
+                </li>
+                <li><strong>Entidad de Archivos:</strong>
+                    <ul>
+                        <li><strong>FILEATTACHMENTS:</strong> Archivos e imágenes adjuntos almacenados directamente en PostgreSQL como BYTEA. Soporta relaciones polimórficas con cualquier entidad</li>
                     </ul>
                 </li>
                 <li><strong>Entidades de Historial:</strong> Cada entidad principal tiene su tabla de historial correspondiente que guarda versiones anteriores</li>
                 <li><strong>Tablas de Relación:</strong> Implementan las relaciones Many-to-Many entre las entidades principales</li>
                 <li><strong>Tipos de Relaciones:</strong>
                     <ul>
-                        <li><strong>||--o{:</strong> Relación One-to-Many (una entidad puede tener muchos registros de historial)</li>
+                        <li><strong>||--o{:</strong> Relación One-to-Many (un usuario puede tener muchas entidades, una entidad puede tener muchos registros de historial)</li>
                         <li><strong>Many-to-Many:</strong> Implementadas a través de tablas intermedias</li>
                     </ul>
                 </li>
@@ -203,11 +294,30 @@
             
             <h3>Relaciones Principales</h3>
             <ul>
+                <li><strong>Users → Entidades:</strong> Relación One-to-Many (un usuario puede tener múltiples categorías, tareas, notas, hábitos y archivos)</li>
                 <li><strong>Categories ↔ Tasks/Notes/Habits:</strong> Relación Many-to-Many (una categoría puede tener múltiples elementos, un elemento puede pertenecer a múltiples categorías)</li>
                 <li><strong>Notes ↔ Tasks:</strong> Relación Many-to-Many (una nota puede relacionarse con múltiples tareas)</li>
                 <li><strong>Habits ↔ Notes:</strong> Relación Many-to-Many (un hábito puede relacionarse con múltiples notas)</li>
                 <li><strong>Habits ↔ Tasks:</strong> Relación Many-to-Many (un hábito puede relacionarse con múltiples tareas)</li>
+                <li><strong>FileAttachments → Entidades:</strong> Relación polimórfica (un archivo puede estar asociado a cualquier entidad usando entity_type y entity_id)</li>
                 <li><strong>Historial:</strong> Cada entidad principal tiene una relación One-to-Many con su tabla de historial correspondiente</li>
+            </ul>
+            
+            <h3>Características del Sistema Multi-Usuario</h3>
+            <ul>
+                <li><strong>Aislamiento de Datos:</strong> Cada usuario solo puede acceder a sus propios datos</li>
+                <li><strong>Autenticación JWT:</strong> Sistema de autenticación basado en tokens JWT</li>
+                <li><strong>Autorización:</strong> Todas las operaciones requieren autenticación y verifican la propiedad de los datos</li>
+                <li><strong>Seguridad:</strong> Las contraseñas se almacenan encriptadas y los endpoints están protegidos</li>
+            </ul>
+            
+            <h3>Sistema de Archivos Adjuntos</h3>
+            <ul>
+                <li><strong>Almacenamiento en Base de Datos:</strong> Los archivos se almacenan como BYTEA directamente en PostgreSQL</li>
+                <li><strong>Soporte Polimórfico:</strong> Un archivo puede estar asociado a cualquier entidad (Category, Task, Note, Habit)</li>
+                <li><strong>Metadatos Completos:</strong> Se almacena nombre original, tipo MIME, tamaño y fecha de subida</li>
+                <li><strong>Seguridad:</strong> Solo el propietario puede acceder a sus archivos</li>
+                <li><strong>Límites:</strong> Tamaño máximo de archivo configurado en 10MB</li>
             </ul>
         </div>
     </div>
@@ -215,9 +325,99 @@
     <div class="legend">
         <h3>Endpoints de la API</h3>
         
-        <h4>Endpoints de Tareas (Tasks)</h4>
+        <button class="collapsible">Endpoints de Autenticación</button>
+        <div class="collapsible-content">
         <ul>
-            <li><strong>GET /tasks</strong>: Obtener todas las tareas
+            <li><strong>POST /auth/register</strong>: Registrar un nuevo usuario
+                <ul>
+                    <li><strong>Request Body</strong>: Objeto UserRegistrationDto
+                        <ul>
+                            <li><code>username</code>: string - Nombre de usuario único (requerido)</li>
+                            <li><code>email</code>: string - Correo electrónico único (requerido)</li>
+                            <li><code>password</code>: string - Contraseña (requerida)</li>
+                        </ul>
+                    </li>
+                    <li><strong>Respuesta</strong>: Mensaje de confirmación [201]</li>
+                </ul>
+            </li>
+            <li><strong>POST /auth/login</strong>: Iniciar sesión
+                <ul>
+                    <li><strong>Request Body</strong>: Objeto LoginDto
+                        <ul>
+                            <li><code>username</code>: string - Nombre de usuario (requerido)</li>
+                            <li><code>password</code>: string - Contraseña (requerida)</li>
+                        </ul>
+                    </li>
+                    <li><strong>Respuesta</strong>: Objeto con token JWT [200]
+                        <ul>
+                            <li><code>token</code>: string - Token JWT para autenticación</li>
+                            <li><code>type</code>: string - Tipo de token ("Bearer")</li>
+                            <li><code>username</code>: string - Nombre del usuario autenticado</li>
+                        </ul>
+                    </li>
+                </ul>
+            </li>
+        </ul>
+        </div>
+        
+        <button class="collapsible">Endpoints de Gestión de Archivos</button>
+        <div class="collapsible-content">
+        <ul>
+            <li><strong>POST /api/files/upload/{entityType}/{entityId}</strong>: Subir archivo a una entidad
+                <ul>
+                    <li><strong>Parámetros</strong>:
+                        <ul>
+                            <li><code>entityType</code>: string [path] - Tipo de entidad ("CATEGORY", "TASK", "NOTE", "HABIT")</li>
+                            <li><code>entityId</code>: integer($int64) [path] - ID de la entidad</li>
+                            <li><code>file</code>: file [form-data] - Archivo a subir (máximo 10MB)</li>
+                        </ul>
+                    </li>
+                    <li><strong>Headers</strong>: Authorization: Bearer {token}</li>
+                    <li><strong>Respuesta</strong>: Objeto FileAttachmentDto [200]</li>
+                </ul>
+            </li>
+            <li><strong>GET /api/files/download/{fileId}</strong>: Descargar archivo
+                <ul>
+                    <li><strong>Parámetros</strong>:
+                        <ul>
+                            <li><code>fileId</code>: integer($int64) [path] - ID del archivo</li>
+                        </ul>
+                    </li>
+                    <li><strong>Headers</strong>: Authorization: Bearer {token}</li>
+                    <li><strong>Respuesta</strong>: Archivo binario [200]</li>
+                </ul>
+            </li>
+            <li><strong>GET /api/files/entity/{entityType}/{entityId}</strong>: Obtener archivos de una entidad
+                <ul>
+                    <li><strong>Parámetros</strong>:
+                        <ul>
+                            <li><code>entityType</code>: string [path] - Tipo de entidad</li>
+                            <li><code>entityId</code>: integer($int64) [path] - ID de la entidad</li>
+                        </ul>
+                    </li>
+                    <li><strong>Headers</strong>: Authorization: Bearer {token}</li>
+                    <li><strong>Respuesta</strong>: Array de FileAttachmentDto [200]</li>
+                </ul>
+            </li>
+            <li><strong>DELETE /api/files/{fileId}</strong>: Eliminar archivo
+                <ul>
+                    <li><strong>Parámetros</strong>:
+                        <ul>
+                            <li><code>fileId</code>: integer($int64) [path] - ID del archivo</li>
+                        </ul>
+                    </li>
+                    <li><strong>Headers</strong>: Authorization: Bearer {token}</li>
+                    <li><strong>Respuesta</strong>: Sin contenido [200]</li>
+                </ul>
+            </li>
+        </ul>
+        </div>
+        
+        <button class="collapsible">Endpoints de Tareas (Tasks)</button>
+        <div class="collapsible-content">
+        <p><strong>Nota:</strong> Todos los endpoints requieren autenticación JWT y solo devuelven datos del usuario autenticado.</p>
+        <ul>
+            <li><strong>GET /tasks</strong>: Obtener todas las tareas del usuario autenticado
                 <ul>
                     <li><strong>Parámetros</strong>:
                         <ul>
@@ -227,6 +427,7 @@
                             <li><code>sortDir</code>: string [query] - Dirección de ordenamiento ("asc" o "desc", por defecto: "asc")</li>
                         </ul>
                     </li>
+                    <li><strong>Headers</strong>: Authorization: Bearer {token}</li>
                     <li><strong>Respuesta</strong>: Objeto paginado [200]
                         <ul>
                             <li><code>content</code>: Array de objetos Task - Contenido de la página actual
@@ -245,13 +446,14 @@
                     </li>
                 </ul>
             </li>
-            <li><strong>GET /tasks/{id}</strong>: Obtener una tarea por ID
+            <li><strong>GET /tasks/{id}</strong>: Obtener una tarea por ID del usuario autenticado
                 <ul>
                     <li><strong>Parámetros</strong>:
                         <ul>
                             <li><code>id</code>: integer($int64) [path] - ID de la tarea a obtener</li>
                         </ul>
                     </li>
+                    <li><strong>Headers</strong>: Authorization: Bearer {token}</li>
                     <li><strong>Respuestas</strong>:
                         <ul>
                             <li>Objeto Task [200] - Tarea encontrada</li>
@@ -260,7 +462,7 @@
                     </li>
                 </ul>
             </li>
-            <li><strong>POST /tasks</strong>: Crear una nueva tarea
+            <li><strong>POST /tasks</strong>: Crear una nueva tarea para el usuario autenticado
                 <ul>
                     <li><strong>Request Body</strong>: Objeto TaskRequest
                         <ul>
@@ -268,10 +470,11 @@
                             <li><code>description</code>: string - Descripción detallada</li>
                         </ul>
                     </li>
+                    <li><strong>Headers</strong>: Authorization: Bearer {token}</li>
                     <li><strong>Respuesta</strong>: Objeto Task creado [201]</li>
                 </ul>
             </li>
-            <li><strong>PUT /tasks/{id}</strong>: Actualizar una tarea existente (reemplazo completo)
+            <li><strong>PUT /tasks/{id}</strong>: Actualizar una tarea existente del usuario autenticado (reemplazo completo)
                 <ul>
                     <li><strong>Parámetros</strong>:
                         <ul>
@@ -284,6 +487,7 @@
                             <li><code>description</code>: string - Descripción detallada</li>
                         </ul>
                     </li>
+                    <li><strong>Headers</strong>: Authorization: Bearer {token}</li>
                     <li><strong>Respuestas</strong>:
                         <ul>
                             <li>Objeto Task actualizado [200]</li>
@@ -292,7 +496,7 @@
                     </li>
                 </ul>
             </li>
-            <li><strong>PATCH /tasks/{id}</strong>: Actualizar parcialmente una tarea existente
+            <li><strong>PATCH /tasks/{id}</strong>: Actualizar parcialmente una tarea existente del usuario autenticado
                 <ul>
                     <li><strong>Parámetros</strong>:
                         <ul>
@@ -305,6 +509,7 @@
                             <li><code>description</code>: string - Descripción detallada</li>
                         </ul>
                     </li>
+                    <li><strong>Headers</strong>: Authorization: Bearer {token}</li>
                     <li><strong>Respuestas</strong>:
                         <ul>
                             <li>Objeto Task actualizado [200]</li>
@@ -313,13 +518,14 @@
                     </li>
                 </ul>
             </li>
-            <li><strong>DELETE /tasks/{id}</strong>: Eliminar una tarea por ID
+            <li><strong>DELETE /tasks/{id}</strong>: Eliminar una tarea por ID del usuario autenticado
                 <ul>
                     <li><strong>Parámetros</strong>:
                         <ul>
                             <li><code>id</code>: integer($int64) [path] - ID de la tarea a eliminar</li>
                         </ul>
                     </li>
+                    <li><strong>Headers</strong>: Authorization: Bearer {token}</li>
                     <li><strong>Respuestas</strong>:
                         <ul>
                             <li>Sin contenido [204] - Tarea eliminada exitosamente</li>
@@ -328,7 +534,7 @@
                     </li>
                 </ul>
             </li>
-            <li><strong>GET /tasks/{id}/categories</strong>: Obtener todas las categorías de una tarea
+            <li><strong>GET /tasks/{id}/categories</strong>: Obtener todas las categorías de una tarea del usuario autenticado
                 <ul>
                     <li><strong>Parámetros</strong>:
                         <ul>
@@ -339,6 +545,7 @@
                             <li><code>sortDir</code>: string [query] - Dirección de ordenamiento ("asc" o "desc", por defecto: "asc")</li>
                         </ul>
                     </li>
+                    <li><strong>Headers</strong>: Authorization: Bearer {token}</li>
                     <li><strong>Respuesta</strong>: Objeto paginado [200]
                         <ul>
                             <li><code>content</code>: Array de objetos Category - Contenido de la página actual</li>
@@ -349,7 +556,7 @@
                     </li>
                 </ul>
             </li>
-            <li><strong>GET /tasks/{id}/notes</strong>: Obtener todas las notas relacionadas con una tarea
+            <li><strong>GET /tasks/{id}/notes</strong>: Obtener todas las notas relacionadas con una tarea del usuario autenticado
                 <ul>
                     <li><strong>Parámetros</strong>:
                         <ul>
@@ -360,6 +567,7 @@
                             <li><code>sortDir</code>: string [query] - Dirección de ordenamiento ("asc" o "desc", por defecto: "asc")</li>
                         </ul>
                     </li>
+                    <li><strong>Headers</strong>: Authorization: Bearer {token}</li>
                     <li><strong>Respuesta</strong>: Objeto paginado [200]
                         <ul>
                             <li><code>content</code>: Array de objetos Note - Contenido de la página actual</li>
@@ -370,7 +578,7 @@
                     </li>
                 </ul>
             </li>
-            <li><strong>GET /tasks/{id}/habits</strong>: Obtener todos los hábitos relacionados con una tarea
+            <li><strong>GET /tasks/{id}/habits</strong>: Obtener todos los hábitos relacionados con una tarea del usuario autenticado
                 <ul>
                     <li><strong>Parámetros</strong>:
                         <ul>
@@ -381,6 +589,7 @@
                             <li><code>sortDir</code>: string [query] - Dirección de ordenamiento ("asc" o "desc", por defecto: "asc")</li>
                         </ul>
                     </li>
+                    <li><strong>Headers</strong>: Authorization: Bearer {token}</li>
                     <li><strong>Respuesta</strong>: Objeto paginado [200]
                         <ul>
                             <li><code>content</code>: Array de objetos Habit - Contenido de la página actual</li>
@@ -391,13 +600,14 @@
                     </li>
                 </ul>
             </li>
-            <li><strong>GET /tasks/{id}/history</strong>: Obtener el historial de versiones de una tarea
+            <li><strong>GET /tasks/{id}/history</strong>: Obtener el historial de versiones de una tarea del usuario autenticado
                 <ul>
                     <li><strong>Parámetros</strong>:
                         <ul>
                             <li><code>id</code>: integer($int64) [path] - ID de la tarea</li>
                         </ul>
                     </li>
+                    <li><strong>Headers</strong>: Authorization: Bearer {token}</li>
                     <li><strong>Respuesta</strong>: Array de objetos TaskHistory [200]
                         <ul>
                             <li><code>historyId</code>: integer($int64) - ID único del registro de historial</li>
@@ -455,11 +665,14 @@
                 </ul>
             </li>
         </ul>
+        </div>
         
-        <h4>Endpoints de Notas (Notes)</h4>
+        <button class="collapsible">Endpoints de Notas (Notes)</button>
+        <div class="collapsible-content">
         <ul>
-            <li><strong>GET /notes</strong>: Obtener todas las notas
+            <li><strong>GET /notes</strong>: Obtener todas las notas del usuario autenticado
                 <ul>
+                    <li><strong>Headers</strong>: Authorization: Bearer {token}</li>
                     <li><strong>Parámetros</strong>:
                         <ul>
                             <li><code>page</code>: integer [query] - Número de página (0-indexed, por defecto: 0)</li>
@@ -487,8 +700,9 @@
                     </li>
                 </ul>
             </li>
-            <li><strong>GET /notes/{id}</strong>: Obtener una nota por ID
+            <li><strong>GET /notes/{id}</strong>: Obtener una nota por ID del usuario autenticado
                 <ul>
+                    <li><strong>Headers</strong>: Authorization: Bearer {token}</li>
                     <li><strong>Parámetros</strong>:
                         <ul>
                             <li><code>id</code>: integer($int64) [path] - ID de la nota a obtener</li>
@@ -502,8 +716,9 @@
                     </li>
                 </ul>
             </li>
-            <li><strong>POST /notes</strong>: Crear una nueva nota
+            <li><strong>POST /notes</strong>: Crear una nueva nota para el usuario autenticado
                 <ul>
+                    <li><strong>Headers</strong>: Authorization: Bearer {token}</li>
                     <li><strong>Request Body</strong>: Objeto NoteRequest
                         <ul>
                             <li><code>title</code>: string - Título de la nota (requerido)</li>
@@ -513,8 +728,9 @@
                     <li><strong>Respuesta</strong>: Objeto Note creado [201]</li>
                 </ul>
             </li>
-            <li><strong>PUT /notes/{id}</strong>: Actualizar una nota existente (reemplazo completo)
+            <li><strong>PUT /notes/{id}</strong>: Actualizar una nota existente del usuario autenticado (reemplazo completo)
                 <ul>
+                    <li><strong>Headers</strong>: Authorization: Bearer {token}</li>
                     <li><strong>Parámetros</strong>:
                         <ul>
                             <li><code>id</code>: integer($int64) [path] - ID de la nota a actualizar</li>
@@ -534,8 +750,9 @@
                     </li>
                 </ul>
             </li>
-            <li><strong>PATCH /notes/{id}</strong>: Actualizar parcialmente una nota existente
+            <li><strong>PATCH /notes/{id}</strong>: Actualizar parcialmente una nota existente del usuario autenticado
                 <ul>
+                    <li><strong>Headers</strong>: Authorization: Bearer {token}</li>
                     <li><strong>Parámetros</strong>:
                         <ul>
                             <li><code>id</code>: integer($int64) [path] - ID de la nota a actualizar</li>
@@ -555,8 +772,9 @@
                     </li>
                 </ul>
             </li>
-            <li><strong>DELETE /notes/{id}</strong>: Eliminar una nota por ID
+            <li><strong>DELETE /notes/{id}</strong>: Eliminar una nota por ID del usuario autenticado
                 <ul>
+                    <li><strong>Headers</strong>: Authorization: Bearer {token}</li>
                     <li><strong>Parámetros</strong>:
                         <ul>
                             <li><code>id</code>: integer($int64) [path] - ID de la nota a eliminar</li>
@@ -570,8 +788,9 @@
                     </li>
                 </ul>
             </li>
-            <li><strong>GET /notes/{id}/categories</strong>: Obtener todas las categorías de una nota
+            <li><strong>GET /notes/{id}/categories</strong>: Obtener todas las categorías de una nota del usuario autenticado
                 <ul>
+                    <li><strong>Headers</strong>: Authorization: Bearer {token}</li>
                     <li><strong>Parámetros</strong>:
                         <ul>
                             <li><code>id</code>: integer($int64) [path] - ID de la nota</li>
@@ -591,8 +810,9 @@
                     </li>
                 </ul>
             </li>
-            <li><strong>GET /notes/{id}/tasks</strong>: Obtener todas las tareas relacionadas con una nota
+            <li><strong>GET /notes/{id}/tasks</strong>: Obtener todas las tareas relacionadas con una nota del usuario autenticado
                 <ul>
+                    <li><strong>Headers</strong>: Authorization: Bearer {token}</li>
                     <li><strong>Parámetros</strong>:
                         <ul>
                             <li><code>id</code>: integer($int64) [path] - ID de la nota</li>
@@ -612,8 +832,9 @@
                     </li>
                 </ul>
             </li>
-            <li><strong>GET /notes/{id}/habits</strong>: Obtener todos los hábitos relacionados con una nota
+            <li><strong>GET /notes/{id}/habits</strong>: Obtener todos los hábitos relacionados con una nota del usuario autenticado
                 <ul>
+                    <li><strong>Headers</strong>: Authorization: Bearer {token}</li>
                     <li><strong>Parámetros</strong>:
                         <ul>
                             <li><code>id</code>: integer($int64) [path] - ID de la nota</li>
@@ -633,8 +854,9 @@
                     </li>
                 </ul>
             </li>
-            <li><strong>GET /notes/{id}/history</strong>: Obtener el historial de versiones de una nota
+            <li><strong>GET /notes/{id}/history</strong>: Obtener el historial de versiones de una nota del usuario autenticado
                 <ul>
+                    <li><strong>Headers</strong>: Authorization: Bearer {token}</li>
                     <li><strong>Parámetros</strong>:
                         <ul>
                             <li><code>id</code>: integer($int64) [path] - ID de la nota</li>
@@ -653,8 +875,9 @@
                     </li>
                 </ul>
             </li>
-            <li><strong>GET /notes/{id}/history/{versionId}</strong>: Obtener una versión específica del historial de una nota
+            <li><strong>GET /notes/{id}/history/{versionId}</strong>: Obtener una versión específica del historial de una nota del usuario autenticado
                 <ul>
+                    <li><strong>Headers</strong>: Authorization: Bearer {token}</li>
                     <li><strong>Parámetros</strong>:
                         <ul>
                             <li><code>id</code>: integer($int64) [path] - ID de la nota</li>
@@ -674,8 +897,9 @@
                     </li>
                 </ul>
             </li>
-            <li><strong>POST /notes/{noteId}/tasks/{taskId}</strong>: Agregar una tarea a una nota
+            <li><strong>POST /notes/{noteId}/tasks/{taskId}</strong>: Agregar una tarea a una nota del usuario autenticado
                 <ul>
+                    <li><strong>Headers</strong>: Authorization: Bearer {token}</li>
                     <li><strong>Parámetros</strong>:
                         <ul>
                             <li><code>noteId</code>: integer($int64) [path] - ID de la nota</li>
@@ -685,8 +909,9 @@
                     <li><strong>Respuesta</strong>: OK [200]</li>
                 </ul>
             </li>
-            <li><strong>POST /notes/{noteId}/habits/{habitId}</strong>: Agregar un hábito a una nota
+            <li><strong>POST /notes/{noteId}/habits/{habitId}</strong>: Agregar un hábito a una nota del usuario autenticado
                 <ul>
+                    <li><strong>Headers</strong>: Authorization: Bearer {token}</li>
                     <li><strong>Parámetros</strong>:
                         <ul>
                             <li><code>noteId</code>: integer($int64) [path] - ID de la nota</li>
@@ -696,8 +921,9 @@
                     <li><strong>Respuesta</strong>: OK [200]</li>
                 </ul>
             </li>
-            <li><strong>POST /notes/{noteId}/categories/{categoryId}</strong>: Agregar una categoría a una nota
+            <li><strong>POST /notes/{noteId}/categories/{categoryId}</strong>: Agregar una categoría a una nota del usuario autenticado
                 <ul>
+                    <li><strong>Headers</strong>: Authorization: Bearer {token}</li>
                     <li><strong>Parámetros</strong>:
                         <ul>
                             <li><code>noteId</code>: integer($int64) [path] - ID de la nota</li>
@@ -707,8 +933,9 @@
                     <li><strong>Respuesta</strong>: OK [200]</li>
                 </ul>
             </li>
-            <li><strong>DELETE /notes/{noteId}/tasks/{taskId}</strong>: Eliminar una tarea de una nota
+            <li><strong>DELETE /notes/{noteId}/tasks/{taskId}</strong>: Eliminar una tarea de una nota del usuario autenticado
                 <ul>
+                    <li><strong>Headers</strong>: Authorization: Bearer {token}</li>
                     <li><strong>Parámetros</strong>:
                         <ul>
                             <li><code>noteId</code>: integer($int64) [path] - ID de la nota</li>
@@ -718,8 +945,9 @@
                     <li><strong>Respuesta</strong>: OK [200]</li>
                 </ul>
             </li>
-            <li><strong>DELETE /notes/{noteId}/habits/{habitId}</strong>: Eliminar un hábito de una nota
+            <li><strong>DELETE /notes/{noteId}/habits/{habitId}</strong>: Eliminar un hábito de una nota del usuario autenticado
                 <ul>
+                    <li><strong>Headers</strong>: Authorization: Bearer {token}</li>
                     <li><strong>Parámetros</strong>:
                         <ul>
                             <li><code>noteId</code>: integer($int64) [path] - ID de la nota</li>
@@ -729,8 +957,9 @@
                     <li><strong>Respuesta</strong>: OK [200]</li>
                 </ul>
             </li>
-            <li><strong>DELETE /notes/{noteId}/categories/{categoryId}</strong>: Eliminar una categoría de una nota
+            <li><strong>DELETE /notes/{noteId}/categories/{categoryId}</strong>: Eliminar una categoría de una nota del usuario autenticado
                 <ul>
+                    <li><strong>Headers</strong>: Authorization: Bearer {token}</li>
                     <li><strong>Parámetros</strong>:
                         <ul>
                             <li><code>noteId</code>: integer($int64) [path] - ID de la nota</li>
@@ -741,11 +970,14 @@
                 </ul>
             </li>
         </ul>
+        </div>
         
-        <h4>Endpoints de Hábitos (Habits)</h4>
+        <button class="collapsible">Endpoints de Hábitos (Habits)</button>
+        <div class="collapsible-content">
         <ul>
-            <li><strong>GET /habits</strong>: Obtener todos los hábitos
+            <li><strong>GET /habits</strong>: Obtener todos los hábitos del usuario autenticado
                 <ul>
+                    <li><strong>Headers</strong>: Authorization: Bearer {token}</li>
                     <li><strong>Parámetros</strong>:
                         <ul>
                             <li><code>page</code>: integer [query] - Número de página (0-indexed, por defecto: 0)</li>
@@ -771,8 +1003,9 @@
                     </li>
                 </ul>
             </li>
-            <li><strong>GET /habits/{id}</strong>: Obtener un hábito por ID
+            <li><strong>GET /habits/{id}</strong>: Obtener un hábito por ID del usuario autenticado
                 <ul>
+                    <li><strong>Headers</strong>: Authorization: Bearer {token}</li>
                     <li><strong>Parámetros</strong>:
                         <ul>
                             <li><code>id</code>: integer($int64) [path] - ID del hábito a obtener</li>
@@ -786,8 +1019,9 @@
                     </li>
                 </ul>
             </li>
-            <li><strong>POST /habits</strong>: Crear un nuevo hábito
+            <li><strong>POST /habits</strong>: Crear un nuevo hábito para el usuario autenticado
                 <ul>
+                    <li><strong>Headers</strong>: Authorization: Bearer {token}</li>
                     <li><strong>Request Body</strong>: Objeto HabitRequest
                         <ul>
                             <li><code>name</code>: string - Nombre del hábito (requerido)</li>
@@ -796,8 +1030,9 @@
                     <li><strong>Respuesta</strong>: Objeto Habit creado [201]</li>
                 </ul>
             </li>
-            <li><strong>PUT /habits/{id}</strong>: Actualizar un hábito existente (reemplazo completo)
+            <li><strong>PUT /habits/{id}</strong>: Actualizar un hábito existente del usuario autenticado (reemplazo completo)
                 <ul>
+                    <li><strong>Headers</strong>: Authorization: Bearer {token}</li>
                     <li><strong>Parámetros</strong>:
                         <ul>
                             <li><code>id</code>: integer($int64) [path] - ID del hábito a actualizar</li>
@@ -816,8 +1051,9 @@
                     </li>
                 </ul>
             </li>
-            <li><strong>PATCH /habits/{id}</strong>: Actualizar parcialmente un hábito existente
+            <li><strong>PATCH /habits/{id}</strong>: Actualizar parcialmente un hábito existente del usuario autenticado
                 <ul>
+                    <li><strong>Headers</strong>: Authorization: Bearer {token}</li>
                     <li><strong>Parámetros</strong>:
                         <ul>
                             <li><code>id</code>: integer($int64) [path] - ID del hábito a actualizar</li>
@@ -836,8 +1072,9 @@
                     </li>
                 </ul>
             </li>
-            <li><strong>DELETE /habits/{id}</strong>: Eliminar un hábito por ID
+            <li><strong>DELETE /habits/{id}</strong>: Eliminar un hábito por ID del usuario autenticado
                 <ul>
+                    <li><strong>Headers</strong>: Authorization: Bearer {token}</li>
                     <li><strong>Parámetros</strong>:
                         <ul>
                             <li><code>id</code>: integer($int64) [path] - ID del hábito a eliminar</li>
@@ -851,8 +1088,9 @@
                     </li>
                 </ul>
             </li>
-            <li><strong>GET /habits/{id}/categories</strong>: Obtener todas las categorías de un hábito
+            <li><strong>GET /habits/{id}/categories</strong>: Obtener todas las categorías de un hábito del usuario autenticado
                 <ul>
+                    <li><strong>Headers</strong>: Authorization: Bearer {token}</li>
                     <li><strong>Parámetros</strong>:
                         <ul>
                             <li><code>id</code>: integer($int64) [path] - ID del hábito</li>
@@ -872,8 +1110,9 @@
                     </li>
                 </ul>
             </li>
-            <li><strong>GET /habits/{id}/tasks</strong>: Obtener todas las tareas relacionadas con un hábito
+            <li><strong>GET /habits/{id}/tasks</strong>: Obtener todas las tareas relacionadas con un hábito del usuario autenticado
                 <ul>
+                    <li><strong>Headers</strong>: Authorization: Bearer {token}</li>
                     <li><strong>Parámetros</strong>:
                         <ul>
                             <li><code>id</code>: integer($int64) [path] - ID del hábito</li>
@@ -893,8 +1132,9 @@
                     </li>
                 </ul>
             </li>
-            <li><strong>GET /habits/{id}/notes</strong>: Obtener todas las notas relacionadas con un hábito
+            <li><strong>GET /habits/{id}/notes</strong>: Obtener todas las notas relacionadas con un hábito del usuario autenticado
                 <ul>
+                    <li><strong>Headers</strong>: Authorization: Bearer {token}</li>
                     <li><strong>Parámetros</strong>:
                         <ul>
                             <li><code>id</code>: integer($int64) [path] - ID del hábito</li>
@@ -914,8 +1154,9 @@
                     </li>
                 </ul>
             </li>
-            <li><strong>GET /habits/{id}/history</strong>: Obtener el historial de versiones de un hábito
+            <li><strong>GET /habits/{id}/history</strong>: Obtener el historial de versiones de un hábito del usuario autenticado
                 <ul>
+                    <li><strong>Headers</strong>: Authorization: Bearer {token}</li>
                     <li><strong>Parámetros</strong>:
                         <ul>
                             <li><code>id</code>: integer($int64) [path] - ID del hábito</li>
@@ -933,8 +1174,9 @@
                     </li>
                 </ul>
             </li>
-            <li><strong>GET /habits/{id}/history/{versionId}</strong>: Obtener una versión específica del historial de un hábito
+            <li><strong>GET /habits/{id}/history/{versionId}</strong>: Obtener una versión específica del historial de un hábito del usuario autenticado
                 <ul>
+                    <li><strong>Headers</strong>: Authorization: Bearer {token}</li>
                     <li><strong>Parámetros</strong>:
                         <ul>
                             <li><code>id</code>: integer($int64) [path] - ID del hábito</li>
@@ -953,8 +1195,9 @@
                     </li>
                 </ul>
             </li>
-            <li><strong>POST /habits/{habitId}/tasks/{taskId}</strong>: Agregar una tarea a un hábito
+            <li><strong>POST /habits/{habitId}/tasks/{taskId}</strong>: Agregar una tarea a un hábito del usuario autenticado
                 <ul>
+                    <li><strong>Headers</strong>: Authorization: Bearer {token}</li>
                     <li><strong>Parámetros</strong>:
                         <ul>
                             <li><code>habitId</code>: integer($int64) [path] - ID del hábito</li>
@@ -964,8 +1207,9 @@
                     <li><strong>Respuesta</strong>: OK [200]</li>
                 </ul>
             </li>
-            <li><strong>POST /habits/{habitId}/notes/{noteId}</strong>: Agregar una nota a un hábito
+            <li><strong>POST /habits/{habitId}/notes/{noteId}</strong>: Agregar una nota a un hábito del usuario autenticado
                 <ul>
+                    <li><strong>Headers</strong>: Authorization: Bearer {token}</li>
                     <li><strong>Parámetros</strong>:
                         <ul>
                             <li><code>habitId</code>: integer($int64) [path] - ID del hábito</li>
@@ -975,8 +1219,9 @@
                     <li><strong>Respuesta</strong>: OK [200]</li>
                 </ul>
             </li>
-            <li><strong>POST /habits/{habitId}/categories/{categoryId}</strong>: Agregar una categoría a un hábito
+            <li><strong>POST /habits/{habitId}/categories/{categoryId}</strong>: Agregar una categoría a un hábito del usuario autenticado
                 <ul>
+                    <li><strong>Headers</strong>: Authorization: Bearer {token}</li>
                     <li><strong>Parámetros</strong>:
                         <ul>
                             <li><code>habitId</code>: integer($int64) [path] - ID del hábito</li>
@@ -986,8 +1231,9 @@
                     <li><strong>Respuesta</strong>: OK [200]</li>
                 </ul>
             </li>
-            <li><strong>DELETE /habits/{habitId}/tasks/{taskId}</strong>: Eliminar una tarea de un hábito
+            <li><strong>DELETE /habits/{habitId}/tasks/{taskId}</strong>: Eliminar una tarea de un hábito del usuario autenticado
                 <ul>
+                    <li><strong>Headers</strong>: Authorization: Bearer {token}</li>
                     <li><strong>Parámetros</strong>:
                         <ul>
                             <li><code>habitId</code>: integer($int64) [path] - ID del hábito</li>
@@ -997,8 +1243,9 @@
                     <li><strong>Respuesta</strong>: OK [200]</li>
                 </ul>
             </li>
-            <li><strong>DELETE /habits/{habitId}/notes/{noteId}</strong>: Eliminar una nota de un hábito
+            <li><strong>DELETE /habits/{habitId}/notes/{noteId}</strong>: Eliminar una nota de un hábito del usuario autenticado
                 <ul>
+                    <li><strong>Headers</strong>: Authorization: Bearer {token}</li>
                     <li><strong>Parámetros</strong>:
                         <ul>
                             <li><code>habitId</code>: integer($int64) [path] - ID del hábito</li>
@@ -1008,8 +1255,9 @@
                     <li><strong>Respuesta</strong>: OK [200]</li>
                 </ul>
             </li>
-            <li><strong>DELETE /habits/{habitId}/categories/{categoryId}</strong>: Eliminar una categoría de un hábito
+            <li><strong>DELETE /habits/{habitId}/categories/{categoryId}</strong>: Eliminar una categoría de un hábito del usuario autenticado
                 <ul>
+                    <li><strong>Headers</strong>: Authorization: Bearer {token}</li>
                     <li><strong>Parámetros</strong>:
                         <ul>
                             <li><code>habitId</code>: integer($int64) [path] - ID del hábito</li>
@@ -1020,11 +1268,14 @@
                 </ul>
             </li>
         </ul>
+        </div>
         
-        <h4>Endpoints de Categorías (Categories)</h4>
+        <button class="collapsible">Endpoints de Categorías (Categories)</button>
+        <div class="collapsible-content">
         <ul>
-            <li><strong>GET /categories</strong>: Obtener todas las categorías
+            <li><strong>GET /categories</strong>: Obtener todas las categorías del usuario autenticado
                 <ul>
+                    <li><strong>Headers</strong>: Authorization: Bearer {token}</li>
                     <li><strong>Parámetros</strong>:
                         <ul>
                             <li><code>page</code>: integer [query] - Número de página (0-indexed, por defecto: 0)</li>
@@ -1050,8 +1301,9 @@
                     </li>
                 </ul>
             </li>
-            <li><strong>GET /categories/{id}</strong>: Obtener una categoría por ID
+            <li><strong>GET /categories/{id}</strong>: Obtener una categoría por ID del usuario autenticado
                 <ul>
+                    <li><strong>Headers</strong>: Authorization: Bearer {token}</li>
                     <li><strong>Parámetros</strong>:
                         <ul>
                             <li><code>id</code>: integer($int64) [path] - ID de la categoría a obtener</li>
@@ -1065,8 +1317,9 @@
                     </li>
                 </ul>
             </li>
-            <li><strong>POST /categories</strong>: Crear una nueva categoría
+            <li><strong>POST /categories</strong>: Crear una nueva categoría para el usuario autenticado
                 <ul>
+                    <li><strong>Headers</strong>: Authorization: Bearer {token}</li>
                     <li><strong>Request Body</strong>: Objeto CategoryRequest
                         <ul>
                             <li><code>name</code>: string - Nombre de la categoría (requerido)</li>
@@ -1076,8 +1329,9 @@
                     <li><strong>Respuesta</strong>: Objeto Category creado [201]</li>
                 </ul>
             </li>
-            <li><strong>PUT /categories/{id}</strong>: Actualizar una categoría existente (reemplazo completo)
+            <li><strong>PUT /categories/{id}</strong>: Actualizar una categoría existente del usuario autenticado (reemplazo completo)
                 <ul>
+                    <li><strong>Headers</strong>: Authorization: Bearer {token}</li>
                     <li><strong>Parámetros</strong>:
                         <ul>
                             <li><code>id</code>: integer($int64) [path] - ID de la categoría a actualizar</li>
@@ -1097,8 +1351,9 @@
                     </li>
                 </ul>
             </li>
-            <li><strong>PATCH /categories/{id}</strong>: Actualizar parcialmente una categoría existente
+            <li><strong>PATCH /categories/{id}</strong>: Actualizar parcialmente una categoría existente del usuario autenticado
                 <ul>
+                    <li><strong>Headers</strong>: Authorization: Bearer {token}</li>
                     <li><strong>Parámetros</strong>:
                         <ul>
                             <li><code>id</code>: integer($int64) [path] - ID de la categoría a actualizar</li>
@@ -1118,8 +1373,9 @@
                     </li>
                 </ul>
             </li>
-            <li><strong>DELETE /categories/{id}</strong>: Eliminar una categoría por ID
+            <li><strong>DELETE /categories/{id}</strong>: Eliminar una categoría por ID del usuario autenticado
                 <ul>
+                    <li><strong>Headers</strong>: Authorization: Bearer {token}</li>
                     <li><strong>Parámetros</strong>:
                         <ul>
                             <li><code>id</code>: integer($int64) [path] - ID de la categoría a eliminar</li>
@@ -1133,8 +1389,9 @@
                     </li>
                 </ul>
             </li>
-            <li><strong>GET /categories/{id}/tasks</strong>: Obtener todas las tareas de una categoría
+            <li><strong>GET /categories/{id}/tasks</strong>: Obtener todas las tareas de una categoría del usuario autenticado
                 <ul>
+                    <li><strong>Headers</strong>: Authorization: Bearer {token}</li>
                     <li><strong>Parámetros</strong>:
                         <ul>
                             <li><code>id</code>: integer($int64) [path] - ID de la categoría</li>
@@ -1154,8 +1411,9 @@
                     </li>
                 </ul>
             </li>
-            <li><strong>GET /categories/{id}/notes</strong>: Obtener todas las notas de una categoría
+            <li><strong>GET /categories/{id}/notes</strong>: Obtener todas las notas de una categoría del usuario autenticado
                 <ul>
+                    <li><strong>Headers</strong>: Authorization: Bearer {token}</li>
                     <li><strong>Parámetros</strong>:
                         <ul>
                             <li><code>id</code>: integer($int64) [path] - ID de la categoría</li>
@@ -1175,8 +1433,9 @@
                     </li>
                 </ul>
             </li>
-            <li><strong>GET /categories/{id}/habits</strong>: Obtener todos los hábitos de una categoría
+            <li><strong>GET /categories/{id}/habits</strong>: Obtener todos los hábitos de una categoría del usuario autenticado
                 <ul>
+                    <li><strong>Headers</strong>: Authorization: Bearer {token}</li>
                     <li><strong>Parámetros</strong>:
                         <ul>
                             <li><code>id</code>: integer($int64) [path] - ID de la categoría</li>
@@ -1196,8 +1455,9 @@
                     </li>
                 </ul>
             </li>
-            <li><strong>GET /categories/{id}/history</strong>: Obtener el historial de versiones de una categoría
+            <li><strong>GET /categories/{id}/history</strong>: Obtener el historial de versiones de una categoría del usuario autenticado
                 <ul>
+                    <li><strong>Headers</strong>: Authorization: Bearer {token}</li>
                     <li><strong>Parámetros</strong>:
                         <ul>
                             <li><code>id</code>: integer($int64) [path] - ID de la categoría</li>
@@ -1216,8 +1476,9 @@
                     </li>
                 </ul>
             </li>
-            <li><strong>GET /categories/{id}/history/{versionId}</strong>: Obtener una versión específica del historial de una categoría
+            <li><strong>GET /categories/{id}/history/{versionId}</strong>: Obtener una versión específica del historial de una categoría del usuario autenticado
                 <ul>
+                    <li><strong>Headers</strong>: Authorization: Bearer {token}</li>
                     <li><strong>Parámetros</strong>:
                         <ul>
                             <li><code>id</code>: integer($int64) [path] - ID de la categoría</li>
@@ -1237,8 +1498,9 @@
                     </li>
                 </ul>
             </li>
-            <li><strong>GET /categories/search/by-name</strong>: Buscar categorías por nombre (parcial)
+            <li><strong>GET /categories/search/by-name</strong>: Buscar categorías por nombre (parcial) del usuario autenticado
                 <ul>
+                    <li><strong>Headers</strong>: Authorization: Bearer {token}</li>
                     <li><strong>Parámetros</strong>:
                         <ul>
                             <li><code>name</code>: string [query] - Nombre parcial para buscar</li>
@@ -1247,8 +1509,9 @@
                     <li><strong>Respuesta</strong>: Array de objetos Category [200]</li>
                 </ul>
             </li>
-            <li><strong>POST /categories/{categoryId}/tasks/{taskId}</strong>: Agregar una tarea a una categoría
+            <li><strong>POST /categories/{categoryId}/tasks/{taskId}</strong>: Agregar una tarea a una categoría del usuario autenticado
                 <ul>
+                    <li><strong>Headers</strong>: Authorization: Bearer {token}</li>
                     <li><strong>Parámetros</strong>:
                         <ul>
                             <li><code>categoryId</code>: integer($int64) [path] - ID de la categoría</li>
@@ -1258,8 +1521,9 @@
                     <li><strong>Respuesta</strong>: OK [200]</li>
                 </ul>
             </li>
-            <li><strong>POST /categories/{categoryId}/notes/{noteId}</strong>: Agregar una nota a una categoría
+            <li><strong>POST /categories/{categoryId}/notes/{noteId}</strong>: Agregar una nota a una categoría del usuario autenticado
                 <ul>
+                    <li><strong>Headers</strong>: Authorization: Bearer {token}</li>
                     <li><strong>Parámetros</strong>:
                         <ul>
                             <li><code>categoryId</code>: integer($int64) [path] - ID de la categoría</li>
@@ -1269,8 +1533,9 @@
                     <li><strong>Respuesta</strong>: OK [200]</li>
                 </ul>
             </li>
-            <li><strong>POST /categories/{categoryId}/habits/{habitId}</strong>: Agregar un hábito a una categoría
+            <li><strong>POST /categories/{categoryId}/habits/{habitId}</strong>: Agregar un hábito a una categoría del usuario autenticado
                 <ul>
+                    <li><strong>Headers</strong>: Authorization: Bearer {token}</li>
                     <li><strong>Parámetros</strong>:
                         <ul>
                             <li><code>categoryId</code>: integer($int64) [path] - ID de la categoría</li>
@@ -1280,8 +1545,9 @@
                     <li><strong>Respuesta</strong>: OK [200]</li>
                 </ul>
             </li>
-            <li><strong>DELETE /categories/{categoryId}/tasks/{taskId}</strong>: Eliminar una tarea de una categoría
+            <li><strong>DELETE /categories/{categoryId}/tasks/{taskId}</strong>: Eliminar una tarea de una categoría del usuario autenticado
                 <ul>
+                    <li><strong>Headers</strong>: Authorization: Bearer {token}</li>
                     <li><strong>Parámetros</strong>:
                         <ul>
                             <li><code>categoryId</code>: integer($int64) [path] - ID de la categoría</li>
@@ -1291,8 +1557,9 @@
                     <li><strong>Respuesta</strong>: OK [200]</li>
                 </ul>
             </li>
-            <li><strong>DELETE /categories/{categoryId}/notes/{noteId}</strong>: Eliminar una nota de una categoría
+            <li><strong>DELETE /categories/{categoryId}/notes/{noteId}</strong>: Eliminar una nota de una categoría del usuario autenticado
                 <ul>
+                    <li><strong>Headers</strong>: Authorization: Bearer {token}</li>
                     <li><strong>Parámetros</strong>:
                         <ul>
                             <li><code>categoryId</code>: integer($int64) [path] - ID de la categoría</li>
@@ -1302,8 +1569,9 @@
                     <li><strong>Respuesta</strong>: OK [200]</li>
                 </ul>
             </li>
-            <li><strong>DELETE /categories/{categoryId}/habits/{habitId}</strong>: Eliminar una categoría de una categoría
+            <li><strong>DELETE /categories/{categoryId}/habits/{habitId}</strong>: Eliminar un hábito de una categoría del usuario autenticado
                 <ul>
+                    <li><strong>Headers</strong>: Authorization: Bearer {token}</li>
                     <li><strong>Parámetros</strong>:
                         <ul>
                             <li><code>categoryId</code>: integer($int64) [path] - ID de la categoría</li>
@@ -1314,11 +1582,14 @@
                 </ul>
             </li>
         </ul>
+        </div>
         
-        <h4>Endpoints de Dashboard</h4>
+        <button class="collapsible">Endpoints de Dashboard</button>
+        <div class="collapsible-content">
         <ul>
-            <li><strong>GET /dashboard-stats</strong>: Obtener estadísticas del dashboard
+            <li><strong>GET /dashboard-stats</strong>: Obtener estadísticas del dashboard del usuario autenticado
                 <ul>
+                    <li><strong>Headers</strong>: Authorization: Bearer {token}</li>
                     <li><strong>Parámetros</strong>: Ninguno</li>
                     <li><strong>Respuesta</strong>: Objeto DashboardStats [200]
                         <ul>
@@ -1331,6 +1602,7 @@
                 </ul>
             </li>
         </ul>
+        </div>
     </div>
     
     <script>
@@ -1340,6 +1612,24 @@
             er: {
                 fontSize: 12,
                 useMaxWidth: true
+            }
+        });
+        
+        // Collapsible functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            var collapsibles = document.getElementsByClassName('collapsible');
+            
+            for (var i = 0; i < collapsibles.length; i++) {
+                collapsibles[i].addEventListener('click', function() {
+                    this.classList.toggle('active');
+                    var content = this.nextElementSibling;
+                    
+                    if (content.classList.contains('show')) {
+                        content.classList.remove('show');
+                    } else {
+                        content.classList.add('show');
+                    }
+                });
             }
         });
     </script>

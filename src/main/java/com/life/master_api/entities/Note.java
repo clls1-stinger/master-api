@@ -59,4 +59,9 @@ public class Note {
     @OneToMany(mappedBy = "note", cascade = CascadeType.ALL, orphanRemoval = false, fetch = FetchType.LAZY)
     @JsonIgnore
     private List<NoteHistory> history;
+    
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    @JsonIgnore
+    private User user;
 }

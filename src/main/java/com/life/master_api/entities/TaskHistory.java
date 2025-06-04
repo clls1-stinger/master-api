@@ -22,6 +22,10 @@ public class TaskHistory {
     @JoinColumn(name = "task_id", nullable = false)
     private Task task;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = true)
+    private User user;
+
     @Column(nullable = false)
     private String title;
 
@@ -34,5 +38,5 @@ public class TaskHistory {
     @Column(nullable = false)
     private Date timestamp;
 
-    // Optional: modifiedBy
+    // User relationship added for data isolation
 }
