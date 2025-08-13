@@ -30,6 +30,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -431,6 +432,243 @@ public class HabitController {
         } else {
             return ResponseEntity.notFound().build();
         }
+    }
+
+    // ==================== ENDPOINTS DE SEGUIMIENTO DIARIO ====================
+
+    @Operation(summary = "Obtener dashboard de hábitos de hoy")
+    @ApiResponse(responseCode = "200", description = "Dashboard obtenido exitosamente")
+    @GetMapping("/dashboard/today")
+    public ResponseEntity<Map<String, Object>> getTodayDashboard() {
+        User currentUser = getCurrentUser();
+        List<Habit> activeHabits = habitRepository.findByUserAndActiveTrue(currentUser);
+        
+        Map<String, Object> dashboard = new HashMap<>();
+        dashboard.put("habits", activeHabits);
+        dashboard.put("totalHabits", activeHabits.size());
+        
+        long completedCount = activeHabits.stream()
+            .mapToLong(habit -> {
+                if (habit.getTrackingType() == com.life.master_api.entities.TrackingType.BOOLEAN) {
+                    return habit.getTodayCompleted() ? 1 : 0;
+                } else {
+                    return (habit.getDailyGoal() != null && 
+                           habit.getTodayQuantity() != null && 
+                           habit.getTodayQuantity() >= habit.getDailyGoal()) ? 1 : 0;
+                }
+            })
+            .sum();
+        
+        dashboard.put("completedToday", completedCount);
+        dashboard.put("completionPercentage", activeHabits.isEmpty() ? 0 : (completedCount * 100.0 / activeHabits.size()));
+        
+        return ResponseEntity.ok(dashboard);
+    }
+
+    @Operation(summary = "Marcar hábito como completado (tipo BOOLEAN)")
+    @ApiResponse(responseCode = "200", description = "Hábito marcado como completado")
+    @PostMapping("/{id}/track/complete")
+    public ResponseEntity<Map<String, Object>> markHabitComplete(@PathVariable Long id) {
+        User currentUser = getCurrentUser();
+        
+        Optional<Habit> habitOpt = habitRepository.findByIdAndUser(id, currentUser);
+        if (!habitOpt.isPresent()) {
+            return ResponseEntity.notFound().build();
+        }
+        
+        Habit habit = habitOpt.get();
+        
+        if (!habit.getActive()) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "No se puede hacer seguimiento de un hábito inactivo");
+            return ResponseEntity.badRequest().body(error);
+        }
+        
+        if (habit.getTrackingType() != com.life.master_api.entities.TrackingType.BOOLEAN) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "Este hábito no es de tipo BOOLEAN");
+            return ResponseEntity.badRequest().body(error);
+        }
+        
+        habit.setTodayCompleted(true);
+        habit.setLastTrackedDate(LocalDate.now());
+        habitRepository.save(habit);
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("message", "Hábito marcado como completado");
+        response.put("habit", habit);
+        
+        return ResponseEntity.ok(response);
+    }
+
+    @Operation(summary = "Actualizar cantidad del hábito (tipo QUANTITY)")
+    @ApiResponse(responseCode = "200", description = "Cantidad actualizada exitosamente")
+    @PostMapping("/{id}/track/quantity")
+    public ResponseEntity<Map<String, Object>> updateHabitQuantity(
+            @PathVariable Long id, 
+            @RequestBody Map<String, Integer> request) {
+        
+        User currentUser = getCurrentUser();
+        
+        Optional<Habit> habitOpt = habitRepository.findByIdAndUser(id, currentUser);
+        if (!habitOpt.isPresent()) {
+            return ResponseEntity.notFound().build();
+        }
+        
+        Habit habit = habitOpt.get();
+        
+        if (!habit.getActive()) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "No se puede hacer seguimiento de un hábito inactivo");
+            return ResponseEntity.badRequest().body(error);
+        }
+        
+        if (habit.getTrackingType() != com.life.master_api.entities.TrackingType.QUANTITY) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "Este hábito no es de tipo QUANTITY");
+            return ResponseEntity.badRequest().body(error);
+        }
+        
+        Integer quantity = request.get("quantity");
+        if (quantity == null || quantity < 0) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "La cantidad debe ser un número positivo");
+            return ResponseEntity.badRequest().body(error);
+        }
+        
+        habit.setTodayQuantity(quantity);
+        habit.setLastTrackedDate(LocalDate.now());
+        habitRepository.save(habit);
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("message", "Cantidad actualizada exitosamente");
+        response.put("habit", habit);
+        
+        boolean goalReached = habit.getDailyGoal() != null && quantity >= habit.getDailyGoal();
+        response.put("goalReached", goalReached);
+        
+        return ResponseEntity.ok(response);
+    }
+
+    @Operation(summary = "Obtener estadísticas de un hábito")
+    @ApiResponse(responseCode = "200", description = "Estadísticas obtenidas exitosamente")
+    @GetMapping("/{id}/stats")
+    public ResponseEntity<Map<String, Object>> getHabitStats(@PathVariable Long id) {
+        User currentUser = getCurrentUser();
+        
+        Optional<Habit> habitOpt = habitRepository.findByIdAndUser(id, currentUser);
+        if (!habitOpt.isPresent()) {
+            return ResponseEntity.notFound().build();
+        }
+        
+        Habit habit = habitOpt.get();
+        
+        Map<String, Object> stats = new HashMap<>();
+        stats.put("habitId", habit.getId());
+        stats.put("habitName", habit.getName());
+        stats.put("currentStreak", habit.getCurrentStreak());
+        stats.put("bestStreak", habit.getBestStreak());
+        stats.put("trackingType", habit.getTrackingType());
+        stats.put("active", habit.getActive());
+        
+        if (habit.getTrackingType() == com.life.master_api.entities.TrackingType.BOOLEAN) {
+            stats.put("todayCompleted", habit.getTodayCompleted());
+        } else {
+            stats.put("todayQuantity", habit.getTodayQuantity());
+            stats.put("dailyGoal", habit.getDailyGoal());
+            stats.put("unit", habit.getUnit());
+            
+            if (habit.getDailyGoal() != null && habit.getDailyGoal() > 0) {
+                double progress = (habit.getTodayQuantity() * 100.0) / habit.getDailyGoal();
+                stats.put("progressPercentage", Math.min(progress, 100.0));
+            }
+        }
+        
+        stats.put("lastTrackedDate", habit.getLastTrackedDate());
+        
+        return ResponseEntity.ok(stats);
+    }
+
+    @Operation(summary = "Obtener solo hábitos activos")
+    @ApiResponse(responseCode = "200", description = "Hábitos activos obtenidos exitosamente")
+    @GetMapping("/active")
+    public ResponseEntity<Map<String, Object>> getActiveHabits(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "id") String sortBy,
+            @RequestParam(defaultValue = "asc") String sortDir) {
+        
+        User currentUser = getCurrentUser();
+        
+        Sort sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name()) ? 
+                Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
+        
+        Pageable pageable = PageRequest.of(page, size, sort);
+        Page<Habit> habitPage = habitRepository.findByUserAndActiveTrue(currentUser, pageable);
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("content", habitPage.getContent());
+        response.put("currentPage", habitPage.getNumber());
+        response.put("totalItems", habitPage.getTotalElements());
+        response.put("totalPages", habitPage.getTotalPages());
+        
+        return ResponseEntity.ok(response);
+    }
+
+    @Operation(summary = "Obtener solo hábitos inactivos")
+    @ApiResponse(responseCode = "200", description = "Hábitos inactivos obtenidos exitosamente")
+    @GetMapping("/inactive")
+    public ResponseEntity<Map<String, Object>> getInactiveHabits(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "id") String sortBy,
+            @RequestParam(defaultValue = "asc") String sortDir) {
+        
+        User currentUser = getCurrentUser();
+        
+        Sort sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name()) ? 
+                Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
+        
+        Pageable pageable = PageRequest.of(page, size, sort);
+        Page<Habit> habitPage = habitRepository.findByUserAndActiveFalse(currentUser, pageable);
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("content", habitPage.getContent());
+        response.put("currentPage", habitPage.getNumber());
+        response.put("totalItems", habitPage.getTotalElements());
+        response.put("totalPages", habitPage.getTotalPages());
+        
+        return ResponseEntity.ok(response);
+    }
+
+    @Operation(summary = "Activar/Desactivar un hábito")
+    @ApiResponse(responseCode = "200", description = "Estado del hábito actualizado exitosamente")
+    @PutMapping("/{id}/toggle-active")
+    public ResponseEntity<Map<String, Object>> toggleHabitActive(@PathVariable Long id) {
+        User currentUser = getCurrentUser();
+        
+        Optional<Habit> habitOpt = habitRepository.findByIdAndUser(id, currentUser);
+        if (!habitOpt.isPresent()) {
+            return ResponseEntity.notFound().build();
+        }
+        
+        Habit habit = habitOpt.get();
+        habit.setActive(!habit.getActive());
+        
+        // Si se desactiva, reiniciar campos de seguimiento diario
+        if (!habit.getActive()) {
+            habit.setTodayCompleted(false);
+            habit.setTodayQuantity(0);
+            habit.setLastTrackedDate(null);
+        }
+        
+        habitRepository.save(habit);
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("message", habit.getActive() ? "Hábito activado" : "Hábito desactivado");
+        response.put("habit", habit);
+        
+        return ResponseEntity.ok(response);
     }
 
 

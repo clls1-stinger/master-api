@@ -140,6 +140,17 @@
                         BIGINT id PK
                         VARCHAR name
                         TIMESTAMP creation
+                        VARCHAR tracking_type
+                        INTEGER daily_goal
+                        VARCHAR unit
+                        TEXT description
+                        BOOLEAN active
+                        VARCHAR color
+                        DATE last_tracked_date
+                        BOOLEAN today_completed
+                        INTEGER today_quantity
+                        INTEGER current_streak
+                        INTEGER best_streak
                         BIGINT user_id FK
                     }
                     
@@ -274,7 +285,7 @@
                         <li><strong>CATEGORIES:</strong> Categorías para organizar elementos (pertenecen a un usuario específico)</li>
                         <li><strong>TASKS:</strong> Tareas con título y descripción (pertenecen a un usuario específico)</li>
                         <li><strong>NOTES:</strong> Notas con título y contenido (pertenecen a un usuario específico)</li>
-                        <li><strong>HABITS:</strong> Hábitos con nombre (pertenecen a un usuario específico)</li>
+                        <li><strong>HABITS:</strong> Hábitos con seguimiento diario avanzado. Incluye nombre, tipo de seguimiento (BOOLEAN/QUANTITY), metas diarias, estado activo/inactivo, rachas actuales y mejores rachas, y campos para el seguimiento diario (pertenecen a un usuario específico)</li>
                     </ul>
                 </li>
                 <li><strong>Entidad de Archivos:</strong>
@@ -318,6 +329,18 @@
                 <li><strong>Metadatos Completos:</strong> Se almacena nombre original, tipo MIME, tamaño y fecha de subida</li>
                 <li><strong>Seguridad:</strong> Solo el propietario puede acceder a sus archivos</li>
                 <li><strong>Límites:</strong> Tamaño máximo de archivo configurado en 10MB</li>
+            </ul>
+            
+            <h3>Sistema de Seguimiento Diario de Hábitos</h3>
+            <ul>
+                <li><strong>Tipos de Seguimiento:</strong> BOOLEAN (completado/no completado) y QUANTITY (cantidad numérica)</li>
+                <li><strong>Metas Diarias:</strong> Cada hábito puede tener una meta diaria específica</li>
+                <li><strong>Estado Activo/Inactivo:</strong> Los hábitos pueden activarse o desactivarse</li>
+                <li><strong>Seguimiento Diario:</strong> Campos para rastrear el progreso del día actual</li>
+                <li><strong>Sistema de Rachas:</strong> Seguimiento automático de rachas actuales y mejores rachas</li>
+                <li><strong>Reset Automático:</strong> Job programado que se ejecuta diariamente a las 00:00 para resetear campos diarios</li>
+                <li><strong>Dashboard:</strong> Vista consolidada del progreso diario con estadísticas</li>
+                <li><strong>Personalización:</strong> Colores personalizables y descripciones para cada hábito</li>
             </ul>
         </div>
     </div>
@@ -993,6 +1016,17 @@
                                     <li><code>id</code>: integer($int64) - ID único del hábito</li>
                                     <li><code>name</code>: string - Nombre del hábito</li>
                                     <li><code>creation</code>: string($date-time) - Fecha de creación</li>
+                                    <li><code>trackingType</code>: string - Tipo de seguimiento (BOOLEAN/QUANTITY)</li>
+                                    <li><code>dailyGoal</code>: integer - Meta diaria</li>
+                                    <li><code>unit</code>: string - Unidad de medida</li>
+                                    <li><code>description</code>: string - Descripción del hábito</li>
+                                    <li><code>active</code>: boolean - Estado activo/inactivo</li>
+                                    <li><code>color</code>: string - Color personalizado</li>
+                                    <li><code>lastTrackedDate</code>: string($date) - Última fecha de seguimiento</li>
+                                    <li><code>todayCompleted</code>: boolean - Completado hoy</li>
+                                    <li><code>todayQuantity</code>: integer - Cantidad registrada hoy</li>
+                                    <li><code>currentStreak</code>: integer - Racha actual</li>
+                                    <li><code>bestStreak</code>: integer - Mejor racha</li>
                                     <li><code>categories</code>: Array de objetos Category - Categorías asociadas</li>
                                 </ul>
                             </li>
@@ -1025,6 +1059,12 @@
                     <li><strong>Request Body</strong>: Objeto HabitRequest
                         <ul>
                             <li><code>name</code>: string - Nombre del hábito (requerido)</li>
+                            <li><code>trackingType</code>: string - Tipo de seguimiento (BOOLEAN/QUANTITY, por defecto: BOOLEAN)</li>
+                            <li><code>dailyGoal</code>: integer - Meta diaria (por defecto: 1)</li>
+                            <li><code>unit</code>: string - Unidad de medida (opcional)</li>
+                            <li><code>description</code>: string - Descripción del hábito (opcional)</li>
+                            <li><code>active</code>: boolean - Estado activo (por defecto: true)</li>
+                            <li><code>color</code>: string - Color personalizado (opcional)</li>
                         </ul>
                     </li>
                     <li><strong>Respuesta</strong>: Objeto Habit creado [201]</li>
@@ -1041,6 +1081,12 @@
                     <li><strong>Request Body</strong>: Objeto HabitRequest
                         <ul>
                             <li><code>name</code>: string - Nombre del hábito (requerido)</li>
+                            <li><code>trackingType</code>: string - Tipo de seguimiento (BOOLEAN/QUANTITY, por defecto: BOOLEAN)</li>
+                            <li><code>dailyGoal</code>: integer - Meta diaria (por defecto: 1)</li>
+                            <li><code>unit</code>: string - Unidad de medida (opcional)</li>
+                            <li><code>description</code>: string - Descripción del hábito (opcional)</li>
+                            <li><code>active</code>: boolean - Estado activo (por defecto: true)</li>
+                            <li><code>color</code>: string - Color personalizado (opcional)</li>
                         </ul>
                     </li>
                     <li><strong>Respuestas</strong>:
@@ -1062,6 +1108,12 @@
                     <li><strong>Request Body</strong>: Objeto HabitRequest (campos opcionales)
                         <ul>
                             <li><code>name</code>: string - Nombre del hábito</li>
+                            <li><code>trackingType</code>: string - Tipo de seguimiento (BOOLEAN/QUANTITY)</li>
+                            <li><code>dailyGoal</code>: integer - Meta diaria</li>
+                            <li><code>unit</code>: string - Unidad de medida</li>
+                            <li><code>description</code>: string - Descripción del hábito</li>
+                            <li><code>active</code>: boolean - Estado activo</li>
+                            <li><code>color</code>: string - Color personalizado</li>
                         </ul>
                     </li>
                     <li><strong>Respuestas</strong>:
@@ -1265,6 +1317,117 @@
                         </ul>
                     </li>
                     <li><strong>Respuesta</strong>: OK [200]</li>
+                </ul>
+            </li>
+            <li><strong>GET /habits/dashboard/today</strong>: Obtener el dashboard de hábitos del día actual del usuario autenticado
+                <ul>
+                    <li><strong>Headers</strong>: Authorization: Bearer {token}</li>
+                    <li><strong>Respuesta</strong>: Objeto Dashboard [200]
+                        <ul>
+                            <li><code>habits</code>: Array de objetos Habit - Hábitos activos del usuario</li>
+                            <li><code>totalHabits</code>: integer - Total de hábitos activos</li>
+                            <li><code>completedHabits</code>: integer - Hábitos completados hoy</li>
+                            <li><code>completionPercentage</code>: double - Porcentaje de completitud del día</li>
+                        </ul>
+                    </li>
+                </ul>
+            </li>
+            <li><strong>POST /habits/{id}/track/complete</strong>: Marcar un hábito de tipo BOOLEAN como completado
+                <ul>
+                    <li><strong>Headers</strong>: Authorization: Bearer {token}</li>
+                    <li><strong>Parámetros</strong>:
+                        <ul>
+                            <li><code>id</code>: integer($int64) [path] - ID del hábito</li>
+                        </ul>
+                    </li>
+                    <li><strong>Respuestas</strong>:
+                        <ul>
+                            <li>Objeto con mensaje de éxito [200]</li>
+                            <li>Error [400] - Hábito no es de tipo BOOLEAN o ya está completado</li>
+                            <li>Error [404] - Hábito no encontrado</li>
+                        </ul>
+                    </li>
+                </ul>
+            </li>
+            <li><strong>POST /habits/{id}/track/quantity</strong>: Actualizar la cantidad de un hábito de tipo QUANTITY
+                <ul>
+                    <li><strong>Headers</strong>: Authorization: Bearer {token}</li>
+                    <li><strong>Parámetros</strong>:
+                        <ul>
+                            <li><code>id</code>: integer($int64) [path] - ID del hábito</li>
+                            <li><code>quantity</code>: integer [query] - Cantidad a registrar (requerido)</li>
+                        </ul>
+                    </li>
+                    <li><strong>Respuestas</strong>:
+                        <ul>
+                            <li>Objeto con mensaje de éxito y estado de meta [200]</li>
+                            <li>Error [400] - Hábito no es de tipo QUANTITY o cantidad inválida</li>
+                            <li>Error [404] - Hábito no encontrado</li>
+                        </ul>
+                    </li>
+                </ul>
+            </li>
+            <li><strong>GET /habits/{id}/stats</strong>: Obtener estadísticas de un hábito específico
+                <ul>
+                    <li><strong>Headers</strong>: Authorization: Bearer {token}</li>
+                    <li><strong>Parámetros</strong>:
+                        <ul>
+                            <li><code>id</code>: integer($int64) [path] - ID del hábito</li>
+                        </ul>
+                    </li>
+                    <li><strong>Respuesta</strong>: Objeto HabitStats [200]
+                        <ul>
+                            <li><code>habit</code>: Objeto Habit - Información del hábito</li>
+                            <li><code>currentStreak</code>: integer - Racha actual</li>
+                            <li><code>bestStreak</code>: integer - Mejor racha</li>
+                            <li><code>trackingType</code>: string - Tipo de seguimiento</li>
+                            <li><code>todayProgress</code>: object - Progreso del día actual</li>
+                        </ul>
+                    </li>
+                </ul>
+            </li>
+            <li><strong>GET /habits/active</strong>: Obtener todos los hábitos activos del usuario autenticado
+                <ul>
+                    <li><strong>Headers</strong>: Authorization: Bearer {token}</li>
+                    <li><strong>Parámetros</strong>:
+                        <ul>
+                            <li><code>page</code>: integer [query] - Número de página (0-indexed, por defecto: 0)</li>
+                            <li><code>size</code>: integer [query] - Tamaño de página (por defecto: 10)</li>
+                            <li><code>sortBy</code>: string [query] - Campo por el cual ordenar (por defecto: "id")</li>
+                            <li><code>sortDir</code>: string [query] - Dirección de ordenamiento ("asc" o "desc", por defecto: "asc")</li>
+                        </ul>
+                    </li>
+                    <li><strong>Respuesta</strong>: Objeto paginado [200] con hábitos activos</li>
+                </ul>
+            </li>
+            <li><strong>GET /habits/inactive</strong>: Obtener todos los hábitos inactivos del usuario autenticado
+                <ul>
+                    <li><strong>Headers</strong>: Authorization: Bearer {token}</li>
+                    <li><strong>Parámetros</strong>:
+                        <ul>
+                            <li><code>page</code>: integer [query] - Número de página (0-indexed, por defecto: 0)</li>
+                            <li><code>size</code>: integer [query] - Tamaño de página (por defecto: 10)</li>
+                            <li><code>sortBy</code>: string [query] - Campo por el cual ordenar (por defecto: "id")</li>
+                            <li><code>sortDir</code>: string [query] - Dirección de ordenamiento ("asc" o "desc", por defecto: "asc")</li>
+                        </ul>
+                    </li>
+                    <li><strong>Respuesta</strong>: Objeto paginado [200] con hábitos inactivos</li>
+                </ul>
+            </li>
+            <li><strong>PUT /habits/{id}/toggle-active</strong>: Activar o desactivar un hábito
+                <ul>
+                    <li><strong>Headers</strong>: Authorization: Bearer {token}</li>
+                    <li><strong>Parámetros</strong>:
+                        <ul>
+                            <li><code>id</code>: integer($int64) [path] - ID del hábito</li>
+                        </ul>
+                    </li>
+                    <li><strong>Respuestas</strong>:
+                        <ul>
+                            <li>Objeto Habit actualizado [200]</li>
+                            <li>Error [404] - Hábito no encontrado</li>
+                        </ul>
+                    </li>
                 </ul>
             </li>
         </ul>
@@ -1586,23 +1749,56 @@
         
         <button class="collapsible">Endpoints de Dashboard</button>
         <div class="collapsible-content">
-        <ul>
-            <li><strong>GET /dashboard-stats</strong>: Obtener estadísticas del dashboard del usuario autenticado
-                <ul>
-                    <li><strong>Headers</strong>: Authorization: Bearer {token}</li>
-                    <li><strong>Parámetros</strong>: Ninguno</li>
-                    <li><strong>Respuesta</strong>: Objeto DashboardStats [200]
-                        <ul>
-                            <li><code>taskCount</code>: integer - Número total de tareas</li>
-                            <li><code>noteCount</code>: integer - Número total de notas</li>
-                            <li><code>habitCount</code>: integer - Número total de hábitos</li>
-                            <li><code>categoryCount</code>: integer - Número total de categorías</li>
-                        </ul>
-                    </li>
-                </ul>
-            </li>
-        </ul>
-        </div>
+    <ul>
+        <li><strong>GET /dashboard-stats</strong>: Obtener estadísticas del dashboard del usuario autenticado
+            <ul>
+                <li><strong>Headers</strong>: Authorization: Bearer {token}</li>
+                <li><strong>Parámetros</strong>: Ninguno</li>
+                <li><strong>Respuesta</strong>: Objeto DashboardStats [200]
+                    <ul>
+                        <li><code>taskCount</code>: integer - Número total de tareas</li>
+                        <li><code>noteCount</code>: integer - Número total de notas</li>
+                        <li><code>habitCount</code>: integer - Número total de hábitos</li>
+                        <li><code>categoryCount</code>: integer - Número total de categorías</li>
+                    </ul>
+                </li>
+            </ul>
+        </li>
+    </ul>
+    </div>
+    
+    <button class="collapsible">Endpoints de Usuarios (Users)</button>
+    <div class="collapsible-content">
+    <ul>
+        <li><strong>GET /users/me</strong>: Obtener información del usuario autenticado
+            <ul>
+                <li><strong>Headers</strong>: Authorization: Bearer {token}</li>
+                <li><strong>Parámetros</strong>: Ninguno</li>
+                <li><strong>Respuesta</strong>: Objeto UserDto [200]
+                    <ul>
+                        <li><code>id</code>: integer($int64) - ID único del usuario</li>
+                        <li><code>username</code>: string - Nombre de usuario</li>
+                        <li><code>email</code>: string - Correo electrónico</li>
+                        <li><code>createdAt</code>: string($date-time) - Fecha de creación de la cuenta</li>
+                        <li><code>lastLogin</code>: string($date-time) - Último inicio de sesión</li>
+                    </ul>
+                </li>
+            </ul>
+        </li>
+        <li><strong>PUT /users/me/password</strong>: Actualizar contraseña del usuario autenticado
+            <ul>
+                <li><strong>Headers</strong>: Authorization: Bearer {token}</li>
+                <li><strong>Parámetros</strong>:
+                    <ul>
+                        <li><code>currentPassword</code>: string [query] - Contraseña actual (requerido)</li>
+                        <li><code>newPassword</code>: string [query] - Nueva contraseña (requerido)</li>
+                    </ul>
+                </li>
+                <li><strong>Respuesta</strong>: Mensaje de confirmación [200]</li>
+            </ul>
+        </li>
+    </ul>
+    </div>
     </div>
     
     <script>

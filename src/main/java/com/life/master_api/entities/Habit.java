@@ -9,6 +9,7 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
+import java.time.LocalDate;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
@@ -33,6 +34,41 @@ public class Habit {
     @Column(nullable = false)
     @Temporal(TemporalType.TIMESTAMP)
     private Date creation;
+
+    // Campos para seguimiento diario
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private TrackingType trackingType = TrackingType.BOOLEAN;
+
+    @Column
+    private Integer dailyGoal;
+
+    @Column(length = 50)
+    private String unit;
+
+    @Column(columnDefinition = "TEXT")
+    private String description;
+
+    @Column(nullable = false)
+    private Boolean active = true;
+
+    @Column(length = 7)
+    private String color = "#007bff";
+
+    @Column
+    private LocalDate lastTrackedDate;
+
+    @Column(nullable = false)
+    private Boolean todayCompleted = false;
+
+    @Column
+    private Integer todayQuantity = 0;
+
+    @Column(nullable = false)
+    private Integer currentStreak = 0;
+
+    @Column(nullable = false)
+    private Integer bestStreak = 0;
 
     @ManyToMany
     @JoinTable(
@@ -66,4 +102,16 @@ public class Habit {
     @OneToMany(mappedBy = "habit", cascade = CascadeType.ALL, orphanRemoval = false, fetch = FetchType.LAZY)
     @JsonIgnore
     private List<HabitHistory> history;
+
+    // Constructor por defecto
+    public Habit() {
+        this.creation = new Date();
+        this.trackingType = TrackingType.BOOLEAN;
+        this.active = true;
+        this.color = "#007bff";
+        this.todayCompleted = false;
+        this.todayQuantity = 0;
+        this.currentStreak = 0;
+        this.bestStreak = 0;
+    }
 }

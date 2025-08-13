@@ -23,4 +23,13 @@ public interface HabitRepository extends JpaRepository<Habit, Long>, HabitReposi
     // usando Criteria API para mayor seguridad
     
     Page<Habit> findByUserAndNameContains(User user, String name, Pageable pageable);
+    
+    // Métodos para seguimiento diario de hábitos
+    List<Habit> findByActiveTrue();
+    
+    List<Habit> findByUserAndActiveTrue(User user);
+    
+    Page<Habit> findByUserAndActiveTrue(User user, Pageable pageable);
+    
+    Page<Habit> findByUserAndActiveFalse(User user, Pageable pageable);
 }
